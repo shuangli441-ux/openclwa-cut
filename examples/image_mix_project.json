@@ -1,0 +1,70 @@
+{
+  "project": "image-video-mix",
+  "format": "douyin-vertical",
+  "fps": 30,
+  "resolution": "1080x1920",
+  "assets": [
+    {
+      "id": "cover",
+      "type": "image",
+      "path": "./assets/cover.png"
+    },
+    {
+      "id": "clip1",
+      "type": "video",
+      "path": "./assets/input.mp4"
+    }
+  ],
+  "timeline": [
+    {
+      "type": "clip",
+      "asset": "cover",
+      "start": 0,
+      "end": 2
+    },
+    {
+      "type": "subtitle",
+      "start": 0,
+      "end": 2,
+      "text": "封面图先顶两秒"
+    },
+    {
+      "type": "clip",
+      "asset": "clip1",
+      "start": 0,
+      "end": 4
+    },
+    {
+      "type": "subtitle",
+      "start": 2,
+      "end": 6,
+      "text": "再切入视频正文"
+    }
+  ],
+  "subtitles": {
+    "fontName": "PingFang SC",
+    "primaryColor": "#FFFFFF",
+    "outlineColor": "#000000",
+    "outline": 3,
+    "marginV": 160,
+    "maxCharsPerLine": 18
+  },
+  "music": {
+    "volume": 0.14,
+    "fadeOutSeconds": 1.2,
+    "duckingThreshold": 0.035,
+    "duckingRatio": 10,
+    "duckingAttackMs": 20,
+    "duckingReleaseMs": 350,
+    "voiceBoost": 1.0
+  },
+  "output": {
+    "path": "./output/image_mix_render.mp4",
+    "platform": "douyin",
+    "videoCodec": "libx264",
+    "audioCodec": "aac",
+    "audioBitrate": "160k",
+    "preset": "medium",
+    "crf": 21
+  }
+}

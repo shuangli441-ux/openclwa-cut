@@ -1,0 +1,13 @@
+{
+  "provider": "pixabay-or-local",
+  "tracks": [
+    {
+      "id": "bgm-qa-001",
+      "title": "Calm Tech QA",
+      "path": "/Users/apple/.openclaw/workspace/tools/clawcut/assets/music/calm-tech-qa.mp3",
+      "tags": ["qa", "business", "light-tech"],
+      "mood": "calm",
+      "useFor": ["qa-short", "tutorial-short"]
+    }
+  ]
+}

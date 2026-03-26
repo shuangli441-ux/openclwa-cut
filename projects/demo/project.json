@@ -1,0 +1,10 @@
+{
+  "project": "demo-project",
+  "format": "douyin-vertical",
+  "fps": 30,
+  "resolution": "1080x1920",
+  "output": {
+    "path": "/Users/apple/.openclaw/workspace/tools/clawcut/projects/demo/output/final.mp4",
+    "platform": "douyin"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "project": "douyin-qa-subtitles",
+  "format": "douyin-vertical",
+  "fps": 30,
+  "resolution": "1080x1920",
+  "assets": [
+    {
+      "id": "clip1",
+      "type": "video",
+      "path": "/Users/apple/Downloads/秒账教程/0692_29 撤销预收款：误操作预收款该如何撤销#秒账 #进销存软件 #预收款 #产品教程_7039990333182168350.mp4"
+    }
+  ],
+  "timeline": [
+    {"type": "clip", "asset": "clip1", "start": 0, "end": 3},
+    {"type": "subtitle", "start": 0, "end": 3, "text": "客户突然多了预收款？"},
+    {"type": "clip", "asset": "clip1", "start": 3, "end": 6},
+    {"type": "subtitle", "start": 3, "end": 6, "text": "误操作，直接撤销"}
+  ],
+  "subtitles": {
+    "fontName": "PingFang SC",
+    "fontSize": 60,
+    "primaryColor": "#FFFFFF",
+    "outlineColor": "#000000",
+    "outline": 3,
+    "marginV": 160,
+    "maxCharsPerLine": 18
+  },
+  "music": {
+    "volume": 0.14,
+    "fadeOutSeconds": 1.2,
+    "duckingThreshold": 0.035,
+    "duckingRatio": 10,
+    "duckingAttackMs": 20,
+    "duckingReleaseMs": 350,
+    "voiceBoost": 1.0
+  },
+  "output": {
+    "path": "/Users/apple/.openclaw/workspace/tools/clawcut/output/douyin_qa_subtitles.mp4",
+    "platform": "douyin",
+    "videoCodec": "libx264",
+    "audioCodec": "aac",
+    "audioBitrate": "160k",
+    "preset": "medium",
+    "crf": 21
+  }
+}

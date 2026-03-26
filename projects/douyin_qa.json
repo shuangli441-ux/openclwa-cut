@@ -1,0 +1,30 @@
+{
+  "project": "douyin-qa-template",
+  "format": "douyin-vertical",
+  "fps": 30,
+  "resolution": "1080x1920",
+  "assets": [
+    {
+      "id": "clip1",
+      "type": "video",
+      "path": "/Users/apple/Downloads/秒账教程/0352_0013预收款是怎么产生的？#秒答为什么_7480716145801055503.mp4"
+    }
+  ],
+  "timeline": [
+    {
+      "type": "clip",
+      "asset": "clip1",
+      "end": 3
+    },
+    {
+      "type": "clip",
+      "asset": "clip1",
+      "start": 3,
+      "end": 6
+    }
+  ],
+  "output": {
+    "path": "/Users/apple/.openclaw/workspace/tools/clawcut/output/douyin_qa_render.mp4",
+    "platform": "douyin"
+  }
+}
