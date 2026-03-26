@@ -15,6 +15,7 @@ var defaultSubtitleFonts = []string{
 	"/System/Library/Fonts/Supplemental/Arial.ttf",
 }
 
+// WriteASS 把时间线里的字幕项写成 ASS 字幕文件。
 func WriteASS(project *Project, outputDir string) (string, error) {
 	dims, err := project.Dimensions()
 	if err != nil {
@@ -185,6 +186,7 @@ func escapeASSText(text string) string {
 	return text
 }
 
+// SubtitleFontsDir 返回字幕字体文件所在目录，供 FFmpeg subtitles 滤镜使用。
 func SubtitleFontsDir(project *Project) string {
 	if project.Subtitles.FontFile == "" {
 		return ""
@@ -192,6 +194,7 @@ func SubtitleFontsDir(project *Project) string {
 	return filepath.Dir(project.Subtitles.FontFile)
 }
 
+// DefaultSubtitleFontFile 返回当前系统可用的默认字幕字体文件。
 func DefaultSubtitleFontFile() string {
 	for _, path := range defaultSubtitleFonts {
 		if info, err := os.Stat(path); err == nil && !info.IsDir() {
@@ -201,6 +204,7 @@ func DefaultSubtitleFontFile() string {
 	return ""
 }
 
+// SubtitleFontNameFromFile 在只提供字体文件时自动推导字幕字体名称。
 func SubtitleFontNameFromFile(project *Project) {
 	if project.Subtitles.FontName != "" || project.Subtitles.FontFile == "" {
 		return
@@ -209,10 +213,12 @@ func SubtitleFontNameFromFile(project *Project) {
 	project.Subtitles.FontName = strings.TrimSuffix(base, filepath.Ext(base))
 }
 
+// ParseFloatString 把字符串解析成浮点数。
 func ParseFloatString(value string) (float64, error) {
 	return strconv.ParseFloat(strings.TrimSpace(value), 64)
 }
 
+// BuildDrawtextFilter 为字幕降级场景构造 drawtext 滤镜链。
 func BuildDrawtextFilter(project *Project) (string, error) {
 	var filters []string
 	for _, item := range project.Timeline {
@@ -238,7 +244,7 @@ func BuildDrawtextFilter(project *Project) (string, error) {
 		filters = append(filters, filter)
 	}
 	if len(filters) == 0 {
-		return "", fmt.Errorf("no subtitle items available for drawtext")
+		return "", fmt.Errorf("没有可用于 drawtext 的字幕项")
 	}
 	return strings.Join(filters, ","), nil
 }

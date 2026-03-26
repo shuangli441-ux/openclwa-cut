@@ -7,7 +7,7 @@
     {
       "id": "clip1",
       "type": "video",
-      "path": "/Users/apple/Downloads/秒账教程/0352_0013预收款是怎么产生的？#秒答为什么_7480716145801055503.mp4"
+      "path": "./assets/input.mp4"
     }
   ],
   "timeline": [
@@ -25,21 +25,19 @@
     "maxCharsPerLine": 18
   },
   "music": {
-    "volume": 0.14,
-    "fadeOutSeconds": 1.2,
-    "duckingThreshold": 0.035,
-    "duckingRatio": 10,
-    "duckingAttackMs": 20,
-    "duckingReleaseMs": 350,
-    "voiceBoost": 1.0
+    "style": "qa-short"
+  },
+  "cover": {
+    "enabled": true,
+    "title": "问题抛出，先抓注意力"
+  },
+  "publish": {
+    "title": "问题抛出，先抓注意力",
+    "hashtags": ["#抖音模板", "#问答短视频", "#知识分享"],
+    "description": "这是通过模板初始化后的二次编辑示例，可继续替换字幕、水印和音乐。"
   },
   "output": {
-    "path": "/Users/apple/.openclaw/workspace/tools/clawcut/output/douyin_template_render.mp4",
-    "platform": "douyin",
-    "videoCodec": "libx264",
-    "audioCodec": "aac",
-    "audioBitrate": "160k",
-    "preset": "medium",
-    "crf": 21
+    "path": "./output/video/douyin_template_render.mp4",
+    "platform": "douyin"
   }
 }

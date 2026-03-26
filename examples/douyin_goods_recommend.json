@@ -1,0 +1,80 @@
+{
+  "project": "douyin-goods-recommend",
+  "assets": [
+    {
+      "id": "main",
+      "type": "video",
+      "path": "./assets/input.mp4"
+    }
+  ],
+  "timeline": [
+    {
+      "type": "clip",
+      "asset": "main",
+      "start": 0,
+      "end": 2.5
+    },
+    {
+      "type": "subtitle",
+      "start": 0,
+      "end": 2.5,
+      "text": "这 3 个小物件，办公室真的离不开"
+    },
+    {
+      "type": "clip",
+      "asset": "main",
+      "start": 2.5,
+      "end": 5
+    },
+    {
+      "type": "subtitle",
+      "start": 2.5,
+      "end": 5,
+      "text": "第一个：桌面收纳盒，拿取顺手还不乱"
+    },
+    {
+      "type": "clip",
+      "asset": "main",
+      "start": 5,
+      "end": 7.5
+    },
+    {
+      "type": "subtitle",
+      "start": 5,
+      "end": 7.5,
+      "text": "第二个：便携支架，拍视频和开会都能用"
+    }
+  ],
+  "subtitles": {
+    "fontName": "PingFang SC",
+    "fontSize": 58,
+    "primaryColor": "#FFF8D6",
+    "outlineColor": "#111111",
+    "outline": 4,
+    "marginV": 190,
+    "maxCharsPerLine": 16
+  },
+  "music": {
+    "style": "goods-recommend",
+    "volume": 0.12,
+    "fadeOutSeconds": 1.0,
+    "duckingThreshold": 0.03,
+    "duckingRatio": 12,
+    "duckingAttackMs": 15,
+    "duckingReleaseMs": 300,
+    "voiceBoost": 1.08
+  },
+  "cover": {
+    "enabled": true,
+    "title": "办公室高频好物推荐"
+  },
+  "publish": {
+    "title": "办公室高频好物推荐",
+    "hashtags": ["#好物推荐", "#种草", "#抖音带货"],
+    "description": "适合三段式种草视频：场景痛点开头，核心卖点居中，结尾给购买理由和行动建议。"
+  },
+  "output": {
+    "path": "./output/video/douyin_goods_recommend.mp4",
+    "platform": "douyin"
+  }
+}

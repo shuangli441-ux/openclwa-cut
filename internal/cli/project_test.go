@@ -70,7 +70,7 @@ func TestValidateRejectsSubtitleBeyondComposition(t *testing.T) {
 		Output: Output{Path: filepath.Join(tmpDir, "final.mp4")},
 	}
 	p.ApplyDefaults()
-	if err := p.Validate(); err == nil || !strings.Contains(err.Error(), "subtitle exceeds total render duration") {
+	if err := p.Validate(); err == nil || !strings.Contains(err.Error(), "字幕超出了成片总时长") {
 		t.Fatalf("expected duration validation error, got %v", err)
 	}
 }
@@ -137,11 +137,14 @@ func TestLoadProjectResolvesBrandingAndCoverDefaults(t *testing.T) {
 	if p.Branding.WatermarkPath != watermarkPath {
 		t.Fatalf("expected resolved watermark path %q, got %q", watermarkPath, p.Branding.WatermarkPath)
 	}
-	if got := p.ResolveCoverPath(); !strings.HasSuffix(got, filepath.Join("output", "final_cover.jpg")) {
+	if got := p.ResolveCoverPath(); !strings.HasSuffix(got, filepath.Join("output", "cover", "final_cover.jpg")) {
 		t.Fatalf("expected default cover path, got %q", got)
 	}
-	if got := p.ResolveReportPath(); !strings.HasSuffix(got, filepath.Join("output", "final.render.json")) {
+	if got := p.ResolveReportPath(); !strings.HasSuffix(got, filepath.Join("output", "report", "final.render.json")) {
 		t.Fatalf("expected default report path, got %q", got)
+	}
+	if got := p.ResolvePublishPath(); !strings.HasSuffix(got, filepath.Join("output", "report", "final.publish.txt")) {
+		t.Fatalf("expected default publish path, got %q", got)
 	}
 	if err := p.Validate(); err != nil {
 		t.Fatalf("expected valid project, got %v", err)

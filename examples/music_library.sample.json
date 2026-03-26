@@ -4,10 +4,14 @@
     {
       "id": "bgm-qa-001",
       "title": "Calm Tech QA",
-      "path": "/Users/apple/.openclaw/workspace/tools/clawcut/assets/music/calm-tech-qa.mp3",
+      "path": "./music/calm-tech-qa.mp3",
       "tags": ["qa", "business", "light-tech"],
       "mood": "calm",
-      "useFor": ["qa-short", "tutorial-short"]
+      "useFor": ["qa-short", "tutorial-short"],
+      "durationSeconds": 28.5,
+      "durationBucket": "medium",
+      "meanVolumeDb": -19.4,
+      "energy": "low"
     }
   ]
 }

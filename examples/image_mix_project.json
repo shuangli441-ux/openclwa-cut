@@ -58,13 +58,17 @@
     "duckingReleaseMs": 350,
     "voiceBoost": 1.0
   },
+  "cover": {
+    "enabled": true,
+    "title": "图片+视频混剪示例"
+  },
+  "publish": {
+    "title": "图片+视频混剪示例",
+    "hashtags": ["#混剪", "#图文转视频", "#短视频制作"],
+    "description": "先用图片做开场，再切入视频正文，适合教程预告和活动说明类短片。"
+  },
   "output": {
-    "path": "./output/image_mix_render.mp4",
-    "platform": "douyin",
-    "videoCodec": "libx264",
-    "audioCodec": "aac",
-    "audioBitrate": "160k",
-    "preset": "medium",
-    "crf": 21
+    "path": "./output/video/image_mix_render.mp4",
+    "platform": "douyin"
   }
 }

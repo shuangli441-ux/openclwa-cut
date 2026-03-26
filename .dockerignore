@@ -1,0 +1,15 @@
+.git
+.github
+.DS_Store
+
+clawcut
+*.zip
+
+output/
+projects/*/output/
+
+*.mp4
+*.mov
+*.m4a
+*.ass
+*.srt

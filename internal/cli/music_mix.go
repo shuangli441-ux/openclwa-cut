@@ -1,9 +1,10 @@
 package cli
 
 import (
-	"clawcut/internal/ffmpeg"
+	"github.com/shuangli441-ux/openclwa-cut/internal/ffmpeg"
 )
 
+// MusicMix 将成片与背景音乐做一次简化混音，适合独立调试 BGM 音量。
 func MusicMix(video, audio, output string, bgmVolume string) error {
 	profile := ffmpeg.VideoProfile{
 		VideoCodec:   "libx264",

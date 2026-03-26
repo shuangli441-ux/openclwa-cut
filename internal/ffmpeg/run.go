@@ -10,6 +10,7 @@ import (
 	"strings"
 )
 
+// VideoProfile 描述视频输出的统一编码规格。
 type VideoProfile struct {
 	Width        int
 	Height       int
@@ -21,6 +22,7 @@ type VideoProfile struct {
 	CRF          int
 }
 
+// AudioMixOptions 定义背景音乐、ducking 与人声增强参数。
 type AudioMixOptions struct {
 	Volume           float64
 	Loop             bool
@@ -36,6 +38,7 @@ type AudioMixOptions struct {
 	VoiceBoost       float64
 }
 
+// AudioFilterSupport 表示当前 FFmpeg 是否具备关键音频滤镜。
 type AudioFilterSupport struct {
 	Sidechain  bool
 	Highpass   bool
@@ -44,6 +47,7 @@ type AudioFilterSupport struct {
 	Limiter    bool
 }
 
+// AudioMixResult 记录本次音频链路中实际生效的能力。
 type AudioMixResult struct {
 	HasVoice              bool
 	DuckingRequested      bool
@@ -53,6 +57,7 @@ type AudioMixResult struct {
 	VoiceBoost            float64
 }
 
+// OverlayOptions 定义水印叠加的位置、大小和显示时段。
 type OverlayOptions struct {
 	Position   string
 	WidthRatio float64
@@ -63,6 +68,7 @@ type OverlayOptions struct {
 	End        float64
 }
 
+// OverlayResult 记录品牌水印的实际叠加结果。
 type OverlayResult struct {
 	Applied        bool
 	OpacityApplied bool
@@ -70,6 +76,14 @@ type OverlayResult struct {
 	Width          int
 }
 
+// CoverTextOptions 定义封面大字标题样式。
+type CoverTextOptions struct {
+	FontSize     int
+	FontColor    string
+	MarginBottom int
+}
+
+// Run 执行外部命令，并把输出直接透传到当前终端。
 func Run(name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = os.Stdout
@@ -77,37 +91,44 @@ func Run(name string, args ...string) error {
 	return cmd.Run()
 }
 
+// RunCapture 执行外部命令并返回合并后的标准输出和错误输出。
 func RunCapture(name string, args ...string) ([]byte, error) {
 	cmd := exec.Command(name, args...)
 	return cmd.CombinedOutput()
 }
 
+// Health 检查 ffmpeg 与 ffprobe 是否可用。
 func Health() error {
 	if err := Run("ffmpeg", "-version"); err != nil {
-		return fmt.Errorf("ffmpeg unavailable: %w", err)
+		return fmt.Errorf("ffmpeg 不可用：%w", err)
 	}
 	if err := Run("ffprobe", "-version"); err != nil {
-		return fmt.Errorf("ffprobe unavailable: %w", err)
+		return fmt.Errorf("ffprobe 不可用：%w", err)
 	}
 	return nil
 }
 
+// Trim 从输入视频中裁出一个片段。
 func Trim(input, start, duration, output string) error {
 	return Run("ffmpeg", "-y", "-ss", start, "-i", input, "-t", duration, "-c:v", "libx264", "-c:a", "aac", "-movflags", "+faststart", output)
 }
 
+// Compress 按指定 CRF 压缩视频文件。
 func Compress(input, output, crf string) error {
 	return Run("ffmpeg", "-y", "-i", input, "-c:v", "libx264", "-preset", "medium", "-crf", crf, "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", output)
 }
 
+// Concat 通过 concat demuxer 拼接多个媒体片段。
 func Concat(listFile, output string) error {
 	return Run("ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", listFile, "-c", "copy", output)
 }
 
+// RenderSegment 按统一规格渲染一个输入片段。
 func RenderSegment(input, start, duration, output string, profile VideoProfile) error {
 	return RenderVideoSegment(input, start, duration, output, profile)
 }
 
+// RenderVideoSegment 渲染视频素材片段，并在无音轨时自动补静音。
 func RenderVideoSegment(input, start, duration, output string, profile VideoProfile) error {
 	hasAudio, err := HasAudio(input)
 	if err != nil {
@@ -149,6 +170,7 @@ func RenderVideoSegment(input, start, duration, output string, profile VideoProf
 	return Run("ffmpeg", args...)
 }
 
+// RenderImageSegment 把静态图片扩展成带静音音轨的视频片段。
 func RenderImageSegment(input, duration, output string, profile VideoProfile) error {
 	args := []string{
 		"-y",
@@ -175,6 +197,7 @@ func RenderImageSegment(input, duration, output string, profile VideoProfile) er
 	return Run("ffmpeg", args...)
 }
 
+// BurnSubtitles 使用 FFmpeg subtitles 滤镜烧录字幕。
 func BurnSubtitles(input, subtitleFile, output string, profile VideoProfile, fontsDir string) error {
 	filter := "subtitles=filename='" + escapeFilterPath(subtitleFile) + "'"
 	if fontsDir != "" {
@@ -183,6 +206,7 @@ func BurnSubtitles(input, subtitleFile, output string, profile VideoProfile, fon
 	return RenderVideoFilter(input, filter, output, profile)
 }
 
+// RenderVideoFilter 对现有视频应用一条视频滤镜链。
 func RenderVideoFilter(input, filter, output string, profile VideoProfile) error {
 	args := []string{
 		"-y",
@@ -200,9 +224,10 @@ func RenderVideoFilter(input, filter, output string, profile VideoProfile) error
 	return Run("ffmpeg", args...)
 }
 
+// ConcatSegments 把统一规格的片段稳定拼接成一个成片。
 func ConcatSegments(inputs []string, output string, profile VideoProfile) error {
 	if len(inputs) == 0 {
-		return fmt.Errorf("no input segments to concat")
+		return fmt.Errorf("没有可拼接的片段，请先检查时间线是否生成成功")
 	}
 	if len(inputs) == 1 {
 		args := []string{
@@ -245,6 +270,7 @@ func ConcatSegments(inputs []string, output string, profile VideoProfile) error 
 	return Run("ffmpeg", args...)
 }
 
+// MixBackgroundMusic 给成片混入 BGM，并在支持时启用 ducking 与人声增强。
 func MixBackgroundMusic(video, audio, output string, profile VideoProfile, opts AudioMixOptions) (AudioMixResult, error) {
 	if opts.Volume <= 0 {
 		opts.Volume = 0.14
@@ -330,6 +356,7 @@ func MixBackgroundMusic(video, audio, output string, profile VideoProfile, opts 
 	return result, nil
 }
 
+// BuildAudioMixFilter 构造适配当前环境能力的音频滤镜链。
 func BuildAudioMixFilter(hasVoice bool, support AudioFilterSupport, opts AudioMixOptions, duration float64) (string, AudioMixResult) {
 	result := AudioMixResult{
 		HasVoice:              hasVoice,
@@ -392,6 +419,7 @@ func BuildAudioMixFilter(hasVoice bool, support AudioFilterSupport, opts AudioMi
 		result
 }
 
+// ApplyWatermark 把品牌 Logo 按指定位置叠加到视频上。
 func ApplyWatermark(video, image, output string, profile VideoProfile, opts OverlayOptions) (OverlayResult, error) {
 	if opts.Position == "" {
 		opts.Position = "top-right"
@@ -407,7 +435,7 @@ func ApplyWatermark(video, image, output string, profile VideoProfile, opts Over
 		return OverlayResult{}, err
 	}
 	if !overlayAvailable {
-		return OverlayResult{}, fmt.Errorf("ffmpeg overlay filter unavailable")
+		return OverlayResult{}, fmt.Errorf("当前 FFmpeg 不支持 overlay 滤镜，无法叠加水印")
 	}
 	opacityAvailable, err := HasFilter("colorchannelmixer")
 	if err != nil {
@@ -437,6 +465,7 @@ func ApplyWatermark(video, image, output string, profile VideoProfile, opts Over
 	return result, nil
 }
 
+// BuildWatermarkFilter 生成品牌水印对应的 FFmpeg overlay 滤镜。
 func BuildWatermarkFilter(canvasWidth, canvasHeight int, opacityAvailable bool, opts OverlayOptions) (string, OverlayResult) {
 	width := int(float64(canvasWidth) * opts.WidthRatio)
 	if width < 64 {
@@ -468,6 +497,7 @@ func BuildWatermarkFilter(canvasWidth, canvasHeight int, opacityAvailable bool, 
 	return filter, result
 }
 
+// ExportCoverFrame 从成片中导出指定时间点的封面帧。
 func ExportCoverFrame(input, output string, timestamp float64, quality int) error {
 	if quality <= 0 {
 		quality = 2
@@ -483,6 +513,7 @@ func ExportCoverFrame(input, output string, timestamp float64, quality int) erro
 		"-ss", fmt.Sprintf("%.3f", timestamp),
 		"-i", input,
 		"-frames:v", "1",
+		"-update", "1",
 	}
 	switch strings.ToLower(filepath.Ext(output)) {
 	case ".jpg", ".jpeg":
@@ -492,6 +523,60 @@ func ExportCoverFrame(input, output string, timestamp float64, quality int) erro
 	return Run("ffmpeg", args...)
 }
 
+// ExportCoverFrameWithTitle 导出封面时叠加标题大字。
+func ExportCoverFrameWithTitle(input, output string, timestamp float64, quality int, title string, opts CoverTextOptions) error {
+	if strings.TrimSpace(title) == "" {
+		return ExportCoverFrame(input, output, timestamp, quality)
+	}
+	hasDrawtext, err := HasFilter("drawtext")
+	if err != nil {
+		return err
+	}
+	if !hasDrawtext {
+		return fmt.Errorf("ffmpeg 缺少 drawtext 滤镜")
+	}
+	if quality <= 0 {
+		quality = 2
+	}
+	if timestamp < 0 {
+		timestamp = 0
+	}
+	if opts.FontSize <= 0 {
+		opts.FontSize = 88
+	}
+	if opts.FontColor == "" {
+		opts.FontColor = "#FFFFFF"
+	}
+	if opts.MarginBottom <= 0 {
+		opts.MarginBottom = 240
+	}
+	if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
+		return err
+	}
+	filter := fmt.Sprintf(
+		"drawtext=font='Sans':text='%s':fontcolor=%s:fontsize=%d:borderw=4:bordercolor=black:x=(w-text_w)/2:y=h-th-%d",
+		escapeDrawtextText(title),
+		drawtextColor(opts.FontColor),
+		opts.FontSize,
+		opts.MarginBottom,
+	)
+	args := []string{
+		"-y",
+		"-ss", fmt.Sprintf("%.3f", timestamp),
+		"-i", input,
+		"-frames:v", "1",
+		"-update", "1",
+		"-vf", filter,
+	}
+	switch strings.ToLower(filepath.Ext(output)) {
+	case ".jpg", ".jpeg":
+		args = append(args, "-q:v", strconv.Itoa(quality))
+	}
+	args = append(args, output)
+	return Run("ffmpeg", args...)
+}
+
+// ProbeDuration 读取媒体总时长，单位为秒。
 func ProbeDuration(path string) (float64, error) {
 	out, err := RunCapture(
 		"ffprobe",
@@ -501,16 +586,45 @@ func ProbeDuration(path string) (float64, error) {
 		path,
 	)
 	if err != nil {
-		return 0, fmt.Errorf("ffprobe duration failed: %w", err)
+		return 0, fmt.Errorf("读取媒体时长失败：%w", err)
 	}
 	value := strings.TrimSpace(string(out))
 	duration, parseErr := strconv.ParseFloat(value, 64)
 	if parseErr != nil {
-		return 0, fmt.Errorf("parse duration %q: %w", value, parseErr)
+		return 0, fmt.Errorf("解析媒体时长失败 %q：%w", value, parseErr)
 	}
 	return duration, nil
 }
 
+// ProbeMeanVolume 读取媒体平均音量，单位为 dB。
+func ProbeMeanVolume(path string) (float64, error) {
+	out, err := RunCapture(
+		"ffmpeg",
+		"-i", path,
+		"-vn",
+		"-af", "volumedetect",
+		"-f", "null",
+		"-",
+	)
+	if err != nil && !strings.Contains(string(out), "mean_volume") {
+		return 0, fmt.Errorf("ffmpeg 音量分析失败: %w", err)
+	}
+	for _, line := range strings.Split(string(out), "\n") {
+		line = strings.TrimSpace(line)
+		if !strings.Contains(line, "mean_volume:") {
+			continue
+		}
+		value := strings.TrimSpace(strings.TrimSuffix(strings.SplitN(line, "mean_volume:", 2)[1], " dB"))
+		meanVolume, parseErr := strconv.ParseFloat(value, 64)
+		if parseErr != nil {
+			return 0, fmt.Errorf("解析音量信息失败 %q: %w", value, parseErr)
+		}
+		return meanVolume, nil
+	}
+	return 0, fmt.Errorf("未能从 ffmpeg 输出中识别平均音量")
+}
+
+// HasAudio 判断媒体文件是否包含音轨。
 func HasAudio(path string) (bool, error) {
 	out, err := RunCapture(
 		"ffprobe",
@@ -521,15 +635,16 @@ func HasAudio(path string) (bool, error) {
 		path,
 	)
 	if err != nil {
-		return false, fmt.Errorf("ffprobe audio streams failed: %w", err)
+		return false, fmt.Errorf("读取媒体音轨失败：%w", err)
 	}
 	return strings.TrimSpace(string(out)) != "", nil
 }
 
+// HasFilter 判断当前 FFmpeg 是否支持指定滤镜。
 func HasFilter(name string) (bool, error) {
 	out, err := RunCapture("ffmpeg", "-hide_banner", "-filters")
 	if err != nil {
-		return false, fmt.Errorf("ffmpeg filter list failed: %w", err)
+		return false, fmt.Errorf("读取 FFmpeg 滤镜列表失败：%w", err)
 	}
 	for _, line := range strings.Split(string(out), "\n") {
 		fields := strings.Fields(line)
@@ -543,6 +658,7 @@ func HasFilter(name string) (bool, error) {
 	return false, nil
 }
 
+// BuildScalePadFilter 生成等比缩放并补黑边的标准化滤镜。
 func BuildScalePadFilter(width, height, fps int) string {
 	return fmt.Sprintf(
 		"scale=%d:%d:force_original_aspect_ratio=decrease,pad=%d:%d:(ow-iw)/2:(oh-ih)/2:black,setsar=1,fps=%d,format=yuv420p",
@@ -554,6 +670,7 @@ func BuildScalePadFilter(width, height, fps int) string {
 	)
 }
 
+// SetVolume 从字符串解析并更新背景音乐音量。
 func (opts *AudioMixOptions) SetVolume(value string) error {
 	parsed, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
 	if err != nil {
@@ -575,6 +692,28 @@ func escapeFilterPath(path string) string {
 		"]", `\]`,
 	)
 	return replacer.Replace(path)
+}
+
+func escapeDrawtextText(value string) string {
+	replacer := strings.NewReplacer(
+		`\`, `\\`,
+		":", `\:`,
+		"'", `\'`,
+		"%", `\%`,
+		"[", `\[`,
+		"]", `\]`,
+		",", `\,`,
+		"\n", `\n`,
+	)
+	return replacer.Replace(value)
+}
+
+func drawtextColor(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return "white"
+	}
+	return value
 }
 
 func normalizeOverlayPosition(position string) string {

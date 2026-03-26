@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"clawcut/internal/ffmpeg"
+	"github.com/shuangli441-ux/openclwa-cut/internal/ffmpeg"
 )
 
 func TestWriteRenderReport(t *testing.T) {
@@ -78,6 +78,10 @@ func TestBuildRenderReportUsesMediaMetadata(t *testing.T) {
 		Output: Output{
 			Path: videoPath,
 		},
+		Publish: PublishSettings{
+			Title:    "成片标题",
+			Hashtags: []string{"#测试"},
+		},
 	}
 
 	report, err := BuildRenderReport(
@@ -90,6 +94,7 @@ func TestBuildRenderReportUsesMediaMetadata(t *testing.T) {
 		ffmpeg.OverlayResult{},
 		"",
 		0,
+		filepath.Join(tmpDir, "final.publish.txt"),
 		time.Now(),
 		time.Now(),
 	)
@@ -101,5 +106,24 @@ func TestBuildRenderReportUsesMediaMetadata(t *testing.T) {
 	}
 	if report.FileSizeBytes <= 0 {
 		t.Fatalf("expected positive file size, got %+v", report)
+	}
+	if !report.Publish.Generated {
+		t.Fatalf("expected publish copy generated, got %+v", report)
+	}
+}
+
+func TestWritePublishCopy(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "output", "report", "final.publish.txt")
+	content := "标题：\n测试文案\n"
+	if err := WritePublishCopy(path, content); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != content {
+		t.Fatalf("expected %q, got %q", content, string(data))
 	}
 }
