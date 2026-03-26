@@ -5,6 +5,8 @@
 当前版本重点能力：
 - 默认输出抖音标准：`1080x1920`、`30fps`、`libx264 + aac`
 - 项目 JSON 自动补默认值，减少必填字段
+- 内置 AI 剪辑模块：按模板自动生成更适合抖音投放的时间线
+- 支持只写 `aiEdit.scriptLines`，不手工写 `timeline` 也能自动出片
 - 自动处理相对路径、中文路径、空格路径、`~` 路径、环境变量路径
 - 字幕多级降级：硬字幕优先，失败时自动输出 `.ass`，不中断成片
 - BGM 自动裁剪、自动淡出、ducking 压低人声背景乐
@@ -38,6 +40,7 @@
 - `clawcut template-init`
 - `clawcut template-douyin-qa`
 - `clawcut template-douyin-goods`
+- `clawcut template-douyin-ads`
 
 ## 5 分钟快速开始
 
@@ -93,6 +96,19 @@ clawcut template-init \
   -title "办公室高频好物推荐"
 ```
 
+投放广告场景：
+
+```bash
+clawcut template-init \
+  -kind douyin-ads \
+  -dir ./projects/ads-demo \
+  -name 秒账投放-demo \
+  -input /path/to/input.mp4 \
+  -title "进销存混乱？3 步帮你理顺" \
+  -brand "秒账" \
+  -cta "现在私信领取试用版"
+```
+
 ### 4. 渲染
 
 ```bash
@@ -139,6 +155,10 @@ clawcut music-scan -dir /path/to/music
 clawcut music-match -style qa-short
 ```
 
+说明：
+- `qa-short`、`goods-recommend`、`promo-short`、`douyin-ads` 会自动映射到音乐库里的 `electronic / pop / upbeat / trap` 等目录风格。
+- 如果项目里没有手工 `clip` 时间线，但填写了 `aiEdit.scriptLines`，`clawcut render` 和 `clawcut validate` 会在执行前自动补齐剪辑片段。
+
 默认音乐库路径会写到系统配置目录：
 - macOS: `~/Library/Application Support/clawcut/music_library.json`
 - Linux: `~/.config/clawcut/music_library.json`
@@ -166,6 +186,18 @@ clawcut template-douyin-goods \
   -title "办公室高频好物推荐"
 ```
 
+直接生成投放广告模板项目文件：
+
+```bash
+clawcut template-douyin-ads \
+  -project ./projects/ads/project.json \
+  -input /path/to/input.mp4 \
+  -output ./projects/ads/output/video/final.mp4 \
+  -title "3 步解决库存混乱" \
+  -brand "秒账" \
+  -cta "现在私信领取试用版"
+```
+
 如果有品牌 Logo，可以继续加：
 
 ```bash
@@ -188,12 +220,21 @@ clawcut template-init \
       "path": "./assets/input.mp4"
     }
   ],
-  "timeline": [
-    { "type": "clip", "asset": "main", "start": 0, "end": 12.5 },
-    { "type": "subtitle", "start": 0, "end": 2.5, "text": "开头先抛问题" }
-  ],
   "music": {
-    "style": "qa-short"
+    "style": "douyin-ads"
+  },
+  "aiEdit": {
+    "enabled": true,
+    "mode": "smart",
+    "templateKind": "douyin-ads",
+    "maxDurationSeconds": 28,
+    "hookSeconds": 3,
+    "ctaSeconds": 5,
+    "scriptLines": [
+      "开头先抛痛点",
+      "中段直接给方案",
+      "结尾明确 CTA"
+    ]
   },
   "cover": {
     "enabled": true,
@@ -213,6 +254,8 @@ clawcut template-init \
 
 说明：
 - 不写的字段会自动补默认值。
+- `aiEdit` 会优先把原素材裁成更适合短视频投放的钩子、主体、CTA 节奏，而不是平均切段。
+- 不写 `timeline` 时，可以直接通过 `aiEdit.scriptLines` 生成 clip + subtitle 时间线。
 - `music.path` 为空但 `music.style` 有值时，会按视频时长和人声音量自动选曲。
 - 字幕滤镜不可用时，会自动输出 `output/subtitles/*.ass`。
 - 抖音项目会自动生成 `output/report/*.publish.txt`。
@@ -224,6 +267,7 @@ clawcut template-init \
 常用示例：
 - [examples/douyin_qa_with_subtitles.json](./examples/douyin_qa_with_subtitles.json)
 - [examples/douyin_goods_recommend.json](./examples/douyin_goods_recommend.json)
+- [examples/douyin_ads_project.json](./examples/douyin_ads_project.json)
 - [examples/image_mix_project.json](./examples/image_mix_project.json)
 
 ## Docker 运行

@@ -1,0 +1,66 @@
+{
+  "project": "douyin-ads-project",
+  "assets": [
+    {
+      "id": "main",
+      "type": "video",
+      "path": "./assets/input.mp4"
+    }
+  ],
+  "subtitles": {
+    "fontName": "PingFang SC",
+    "fontSize": 60,
+    "primaryColor": "#FFF2B2",
+    "outlineColor": "#111111",
+    "outline": 4,
+    "marginV": 200,
+    "maxCharsPerLine": 14
+  },
+  "music": {
+    "style": "douyin-ads",
+    "volume": 0.12,
+    "fadeOutSeconds": 1.2,
+    "duckingThreshold": 0.03,
+    "duckingRatio": 12,
+    "duckingAttackMs": 15,
+    "duckingReleaseMs": 300,
+    "voiceBoost": 1.08
+  },
+  "branding": {
+    "watermarkPath": "./assets/logo.png",
+    "watermarkPosition": "bottom-right",
+    "watermarkWidthRatio": 0.14,
+    "watermarkOpacity": 0.92,
+    "marginX": 36,
+    "marginY": 48
+  },
+  "aiEdit": {
+    "enabled": true,
+    "mode": "smart",
+    "templateKind": "douyin-ads",
+    "maxDurationSeconds": 24,
+    "hookSeconds": 3,
+    "ctaSeconds": 5,
+    "scriptLines": [
+      "库存越做越乱？先别急着补表格",
+      "把出入库、销售、收款放进同一套流程",
+      "老板看报表更快，员工录单也不容易出错",
+      "现在私信领取试用版，直接拿去跑业务"
+    ]
+  },
+  "cover": {
+    "enabled": true,
+    "title": "库存混乱？3 步理顺",
+    "titleFontSize": 96,
+    "titleColor": "#FFFFFF"
+  },
+  "publish": {
+    "title": "库存混乱？3 步理顺",
+    "hashtags": ["#抖音广告", "#信息流投放", "#企业数字化"],
+    "description": "适合信息流投放素材：前三秒抛痛点，中段讲方案和收益，结尾明确 CTA。"
+  },
+  "output": {
+    "path": "./output/video/douyin_ads_project.mp4",
+    "platform": "douyin"
+  }
+}

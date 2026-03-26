@@ -5,6 +5,7 @@
 注意：
 - 示例里的 `./assets/...`、`./audio/...` 都是占位路径，需要换成你自己的素材。
 - 抖音类示例默认会输出成片、封面、字幕和发布文案。
+- 如果示例里只有 `aiEdit.scriptLines`、没有手工 `timeline`，说明这个项目会在渲染前自动生成剪辑时间线。
 
 ## douyin_qa_with_subtitles.json
 
@@ -27,6 +28,17 @@
 - 好物推荐
 - 产品种草
 - 口播带货
+
+## douyin_ads_project.json
+
+文件：
+- [douyin_ads_project.json](./douyin_ads_project.json)
+- [douyin_ads_project.README.md](./douyin_ads_project.README.md)
+
+适合：
+- 抖音投放短视频
+- SaaS、工具、服务类广告
+- 需要自动生成钩子、卖点、CTA 节奏的项目
 
 ## image_mix_project.json
 

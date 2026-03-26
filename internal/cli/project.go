@@ -22,6 +22,7 @@ type Project struct {
 	Music      MusicSettings    `json:"music,omitempty"`
 	Branding   BrandingSettings `json:"branding,omitempty"`
 	Cover      CoverSettings    `json:"cover,omitempty"`
+	AIEdit     AIEditSettings   `json:"aiEdit,omitempty"`
 	Publish    PublishSettings  `json:"publish,omitempty"`
 	Output     Output           `json:"output"`
 }
@@ -105,6 +106,17 @@ type CoverSettings struct {
 	TitleMarginBottom int     `json:"titleMarginBottom,omitempty"`
 }
 
+// AIEditSettings 定义智能剪辑模块的自动选段与节奏参数。
+type AIEditSettings struct {
+	Enabled            bool     `json:"enabled,omitempty"`
+	Mode               string   `json:"mode,omitempty"`
+	TemplateKind       string   `json:"templateKind,omitempty"`
+	ScriptLines        []string `json:"scriptLines,omitempty"`
+	MaxDurationSeconds float64  `json:"maxDurationSeconds,omitempty"`
+	HookSeconds        float64  `json:"hookSeconds,omitempty"`
+	CTASeconds         float64  `json:"ctaSeconds,omitempty"`
+}
+
 // PublishSettings 定义可直接复制到发布平台的标题、话题和说明文案。
 type PublishSettings struct {
 	Title       string   `json:"title,omitempty"`
@@ -164,6 +176,13 @@ func InitProject(dir, name string) error {
 		Cover: CoverSettings{
 			Enabled: true,
 			Title:   name,
+		},
+		AIEdit: AIEditSettings{
+			Enabled:            true,
+			Mode:               "smart",
+			MaxDurationSeconds: 35,
+			HookSeconds:        3,
+			CTASeconds:         4,
 		},
 		Publish: PublishSettings{
 			Title: name,
@@ -377,6 +396,21 @@ func (p *Project) ApplyDefaults() {
 		} else {
 			p.Cover.TitleMarginBottom = 240
 		}
+	}
+	if !p.AIEdit.Enabled && p.AIEdit.Mode == "" && p.AIEdit.MaxDurationSeconds == 0 && p.AIEdit.HookSeconds == 0 && p.AIEdit.CTASeconds == 0 {
+		p.AIEdit.Enabled = true
+	}
+	if p.AIEdit.Mode == "" {
+		p.AIEdit.Mode = "smart"
+	}
+	if p.AIEdit.MaxDurationSeconds == 0 {
+		p.AIEdit.MaxDurationSeconds = 35
+	}
+	if p.AIEdit.HookSeconds == 0 {
+		p.AIEdit.HookSeconds = 3
+	}
+	if p.AIEdit.CTASeconds == 0 {
+		p.AIEdit.CTASeconds = 4
 	}
 	if strings.TrimSpace(p.Publish.Title) == "" {
 		if strings.TrimSpace(p.Cover.Title) != "" {
@@ -647,6 +681,9 @@ func (p *Project) resolveOutputArtifactPath(kind string, suffix string) string {
 
 // Validate 在真正渲染前尽可能提前发现配置错误。
 func (p *Project) Validate() error {
+	if err := p.PrepareAIEditTimeline(); err != nil {
+		return err
+	}
 	if strings.TrimSpace(p.Project) == "" {
 		return errors.New("项目名不能为空，请填写 project")
 	}
@@ -756,6 +793,21 @@ func (p *Project) Validate() error {
 	}
 	if p.Music.VoiceBoost <= 0 {
 		return fmt.Errorf("music.voiceBoost 必须大于 0，当前为 %.2f", p.Music.VoiceBoost)
+	}
+	if p.AIEdit.MaxDurationSeconds < 0 {
+		return fmt.Errorf("aiEdit.maxDurationSeconds 不能小于 0，当前为 %.2f", p.AIEdit.MaxDurationSeconds)
+	}
+	if p.AIEdit.HookSeconds < 0 {
+		return fmt.Errorf("aiEdit.hookSeconds 不能小于 0，当前为 %.2f", p.AIEdit.HookSeconds)
+	}
+	if p.AIEdit.CTASeconds < 0 {
+		return fmt.Errorf("aiEdit.ctaSeconds 不能小于 0，当前为 %.2f", p.AIEdit.CTASeconds)
+	}
+	if mode := strings.TrimSpace(strings.ToLower(p.AIEdit.Mode)); mode != "" && mode != "smart" && mode != "basic" {
+		return fmt.Errorf("aiEdit.mode 仅支持 smart 或 basic，当前为 %q", p.AIEdit.Mode)
+	}
+	if p.AIEdit.TemplateKind != "" && normalizeTemplateKind(p.AIEdit.TemplateKind) == "" {
+		return fmt.Errorf("aiEdit.templateKind 仅支持 %s、%s 或 %s，当前为 %q", TemplateDouyinQA, TemplateDouyinGoods, TemplateDouyinAds, p.AIEdit.TemplateKind)
 	}
 	musicPath, err := p.ResolveMusicPath()
 	if err != nil {

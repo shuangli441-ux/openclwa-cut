@@ -11,6 +11,22 @@ import (
 	"github.com/shuangli441-ux/openclwa-cut/internal/ffmpeg"
 )
 
+var musicStyleAliases = map[string][]string{
+	"qa-short":        {"qa-short", "tutorial-short", "electronic", "calm", "professional", "business", "general-short"},
+	"tutorial-short":  {"tutorial-short", "qa-short", "electronic", "professional", "general-short"},
+	"goods-recommend": {"goods-recommend", "promo-short", "upbeat", "pop", "general-short"},
+	"promo-short":     {"promo-short", "douyin-ads", "upbeat", "pop", "trap", "electronic"},
+	"douyin-ads":      {"douyin-ads", "promo-short", "upbeat", "pop", "trap", "electronic"},
+	"general-short":   {"general-short", "electronic", "pop", "upbeat"},
+	"upbeat":          {"upbeat", "pop", "promo-short"},
+	"pop":             {"pop", "upbeat", "promo-short"},
+	"electronic":      {"electronic", "qa-short", "tutorial-short", "douyin-ads"},
+	"trap":            {"trap", "douyin-ads", "promo-short"},
+	"guofeng":         {"guofeng", "general-short"},
+	"professional":    {"professional", "electronic", "qa-short"},
+	"business":        {"business", "professional", "qa-short"},
+}
+
 // MusicLibrary 表示本地音乐库索引文件。
 type MusicLibrary struct {
 	Provider string       `json:"provider"`
@@ -99,9 +115,9 @@ func ScanMusicLibrary(musicDir, libraryPath string) error {
 			ID:              musicTrackID(fileName),
 			Title:           fileName,
 			Path:            filepath.ToSlash(relPath),
-			Tags:            inferMusicTags(fileName),
-			Mood:            inferMusicMood(fileName),
-			UseFor:          inferMusicUseFor(fileName, duration),
+			Tags:            inferMusicTags(fileName, relPath),
+			Mood:            inferMusicMood(fileName, relPath),
+			UseFor:          inferMusicUseFor(fileName, relPath, duration),
 			DurationSeconds: duration,
 			DurationBucket:  inferDurationBucket(duration),
 			MeanVolumeDB:    meanVolume,
@@ -189,28 +205,49 @@ func isMusicFile(path string) bool {
 }
 
 func trackMatchesStyle(track MusicTrack, style string) bool {
-	style = strings.TrimSpace(strings.ToLower(style))
-	if style == "" {
-		return true
+	return musicMatchStrength(track, style) > 0
+}
+
+func musicMatchStrength(track MusicTrack, style string) int {
+	requested := normalizeMusicToken(style)
+	if requested == "" {
+		return 1
 	}
+	aliases := expandMusicStyleAliases(requested)
+	strength := 0
 	for _, item := range track.UseFor {
-		if strings.EqualFold(item, style) {
-			return true
+		value := normalizeMusicToken(item)
+		if value == requested {
+			return 4
+		}
+		if containsNormalized(aliases, value) && strength < 3 {
+			strength = 3
 		}
 	}
 	for _, item := range track.Tags {
-		if strings.EqualFold(item, style) {
-			return true
+		value := normalizeMusicToken(item)
+		if value == requested && strength < 3 {
+			strength = 3
+		}
+		if containsNormalized(aliases, value) && strength < 2 {
+			strength = 2
 		}
 	}
-	return false
+	if normalizeMusicToken(track.Mood) == requested && strength < 1 {
+		strength = 1
+	}
+	return strength
 }
 
 func scoreMusicTrack(track MusicTrack, style string, targetDuration float64, voiceMeanVolume float64) (float64, bool) {
-	if style != "" && !trackMatchesStyle(track, style) {
+	matchStrength := musicMatchStrength(track, style)
+	if style != "" && matchStrength == 0 {
 		return 0, false
 	}
 	score := 0.0
+	if style != "" {
+		score -= float64(matchStrength) * 2.5
+	}
 	if targetDuration > 0 && track.DurationSeconds > 0 {
 		diff := track.DurationSeconds - targetDuration
 		if diff < 0 {
@@ -226,6 +263,22 @@ func scoreMusicTrack(track MusicTrack, style string, targetDuration float64, voi
 	}
 	if voiceMeanVolume > -14 && track.Energy == "high" {
 		score += 4
+	}
+	if strings.Contains(normalizeMusicToken(style), "qa") {
+		if track.Energy == "high" {
+			score += 2
+		}
+		if track.Mood == "professional" || track.Mood == "calm" {
+			score -= 1
+		}
+	}
+	if strings.Contains(normalizeMusicToken(style), "goods") || strings.Contains(normalizeMusicToken(style), "promo") || strings.Contains(normalizeMusicToken(style), "ads") {
+		if track.Energy == "medium" {
+			score -= 0.8
+		}
+		if track.Energy == "high" {
+			score -= 1.2
+		}
 	}
 	if style == "" && track.Energy == "low" {
 		score -= 0.5
@@ -255,57 +308,84 @@ func inferMusicEnergy(meanVolume float64) string {
 	}
 }
 
-func inferMusicMood(name string) string {
-	name = strings.ToLower(name)
+func inferMusicMood(name string, relPath string) string {
+	combined := strings.ToLower(name + " " + relPath)
 	switch {
-	case strings.Contains(name, "calm"), strings.Contains(name, "soft"), strings.Contains(name, "ambient"):
+	case strings.Contains(combined, "calm"), strings.Contains(combined, "soft"), strings.Contains(combined, "ambient"), strings.Contains(combined, "guofeng"):
 		return "calm"
-	case strings.Contains(name, "happy"), strings.Contains(name, "bright"), strings.Contains(name, "fun"):
+	case strings.Contains(combined, "happy"), strings.Contains(combined, "bright"), strings.Contains(combined, "fun"), strings.Contains(combined, "upbeat"), strings.Contains(combined, "pop"):
 		return "bright"
-	case strings.Contains(name, "tech"), strings.Contains(name, "business"):
+	case strings.Contains(combined, "tech"), strings.Contains(combined, "business"), strings.Contains(combined, "electronic"):
 		return "professional"
 	default:
 		return "general"
 	}
 }
 
-func inferMusicTags(name string) []string {
-	name = strings.ToLower(name)
-	replacer := strings.NewReplacer("-", " ", "_", " ")
-	fields := strings.Fields(replacer.Replace(name))
-	if len(fields) == 0 {
-		return []string{"general"}
-	}
+func inferMusicTags(name string, relPath string) []string {
 	seen := map[string]struct{}{}
-	tags := make([]string, 0, len(fields))
-	for _, field := range fields {
-		if _, ok := seen[field]; ok {
-			continue
+	add := func(values ...string) {
+		for _, value := range values {
+			value = normalizeMusicToken(value)
+			if value == "" {
+				continue
+			}
+			if _, ok := seen[value]; ok {
+				continue
+			}
+			seen[value] = struct{}{}
 		}
-		seen[field] = struct{}{}
-		tags = append(tags, field)
 	}
+
+	add(splitMusicTokens(name)...)
+	add(pathMusicTokens(relPath)...)
+
+	if len(seen) == 0 {
+		add("general")
+	}
+
+	tags := make([]string, 0, len(seen))
+	for value := range seen {
+		tags = append(tags, value)
+	}
+	sort.Strings(tags)
 	return tags
 }
 
-func inferMusicUseFor(name string, duration float64) []string {
-	name = strings.ToLower(name)
-	var useFor []string
-	switch {
-	case strings.Contains(name, "qa"), strings.Contains(name, "talk"), strings.Contains(name, "tutorial"):
-		useFor = append(useFor, "qa-short", "tutorial-short")
-	case strings.Contains(name, "goods"), strings.Contains(name, "product"), strings.Contains(name, "sale"):
-		useFor = append(useFor, "goods-recommend", "promo-short")
-	default:
-		useFor = append(useFor, "general-short")
+func inferMusicUseFor(name string, relPath string, duration float64) []string {
+	combined := strings.ToLower(name + " " + relPath)
+	useFor := make([]string, 0, 6)
+	add := func(values ...string) {
+		for _, value := range values {
+			value = normalizeMusicToken(value)
+			if value == "" {
+				continue
+			}
+			if containsNormalized(useFor, value) {
+				continue
+			}
+			useFor = append(useFor, value)
+		}
 	}
+
+	switch {
+	case strings.Contains(combined, "qa"), strings.Contains(combined, "talk"), strings.Contains(combined, "tutorial"), strings.Contains(combined, "electronic"), strings.Contains(combined, "ambient"):
+		add("qa-short", "tutorial-short")
+	case strings.Contains(combined, "goods"), strings.Contains(combined, "product"), strings.Contains(combined, "sale"), strings.Contains(combined, "pop"), strings.Contains(combined, "upbeat"):
+		add("goods-recommend", "promo-short")
+	case strings.Contains(combined, "trap"), strings.Contains(combined, "ads"), strings.Contains(combined, "promo"):
+		add("douyin-ads", "promo-short")
+	default:
+		add("general-short")
+	}
+
 	switch inferDurationBucket(duration) {
 	case "short":
-		useFor = append(useFor, "short-form")
+		add("short-form")
 	case "medium":
-		useFor = append(useFor, "mid-form")
+		add("mid-form")
 	default:
-		useFor = append(useFor, "long-form")
+		add("long-form")
 	}
 	return useFor
 }
@@ -319,4 +399,70 @@ func musicTrackID(name string) string {
 		return "track"
 	}
 	return name
+}
+
+func expandMusicStyleAliases(style string) []string {
+	style = normalizeMusicToken(style)
+	if style == "" {
+		return nil
+	}
+	result := []string{style}
+	if aliases, ok := musicStyleAliases[style]; ok {
+		for _, item := range aliases {
+			item = normalizeMusicToken(item)
+			if item == "" || containsNormalized(result, item) {
+				continue
+			}
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
+func normalizeMusicToken(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	replacer := strings.NewReplacer("-", " ", "_", " ", "/", " ", "\\", " ", ".", " ")
+	fields := strings.Fields(replacer.Replace(value))
+	return strings.Join(fields, "-")
+}
+
+func splitMusicTokens(value string) []string {
+	replacer := strings.NewReplacer("-", " ", "_", " ", "/", " ", "\\", " ", ".", " ")
+	fields := strings.Fields(strings.ToLower(replacer.Replace(value)))
+	result := make([]string, 0, len(fields))
+	for _, field := range fields {
+		normalized := normalizeMusicToken(field)
+		if normalized == "" {
+			continue
+		}
+		result = append(result, normalized)
+	}
+	return result
+}
+
+func pathMusicTokens(relPath string) []string {
+	dir := filepath.Dir(relPath)
+	if dir == "." || dir == "" {
+		return nil
+	}
+	parts := strings.Split(filepath.ToSlash(dir), "/")
+	result := make([]string, 0, len(parts))
+	for _, part := range parts {
+		normalized := normalizeMusicToken(part)
+		if normalized == "" {
+			continue
+		}
+		result = append(result, normalized)
+	}
+	return result
+}
+
+func containsNormalized(values []string, target string) bool {
+	target = normalizeMusicToken(target)
+	for _, value := range values {
+		if normalizeMusicToken(value) == target {
+			return true
+		}
+	}
+	return false
 }

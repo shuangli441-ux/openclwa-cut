@@ -7,32 +7,6 @@
       "path": "./assets/input.mp4"
     }
   ],
-  "timeline": [
-    {
-      "type": "clip",
-      "asset": "main",
-      "start": 0,
-      "end": 3
-    },
-    {
-      "type": "subtitle",
-      "start": 0,
-      "end": 3,
-      "text": "客户突然多了预收款？"
-    },
-    {
-      "type": "clip",
-      "asset": "main",
-      "start": 3,
-      "end": 6
-    },
-    {
-      "type": "subtitle",
-      "start": 3,
-      "end": 6,
-      "text": "误操作，直接撤销就行"
-    }
-  ],
   "subtitles": {
     "fontName": "PingFang SC",
     "fontSize": 60,
@@ -54,6 +28,19 @@
     "voiceHighpassHz": 120,
     "voiceLowpassHz": 9000,
     "voiceBoost": 1.05
+  },
+  "aiEdit": {
+    "enabled": true,
+    "mode": "smart",
+    "templateKind": "douyin-qa",
+    "maxDurationSeconds": 18,
+    "hookSeconds": 3,
+    "ctaSeconds": 4,
+    "scriptLines": [
+      "客户突然多了预收款？",
+      "先别慌，找到原单据直接撤销就行",
+      "最后再核对流水，避免重复记账"
+    ]
   },
   "cover": {
     "enabled": true,

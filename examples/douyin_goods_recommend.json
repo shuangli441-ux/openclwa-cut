@@ -7,44 +7,6 @@
       "path": "./assets/input.mp4"
     }
   ],
-  "timeline": [
-    {
-      "type": "clip",
-      "asset": "main",
-      "start": 0,
-      "end": 2.5
-    },
-    {
-      "type": "subtitle",
-      "start": 0,
-      "end": 2.5,
-      "text": "这 3 个小物件，办公室真的离不开"
-    },
-    {
-      "type": "clip",
-      "asset": "main",
-      "start": 2.5,
-      "end": 5
-    },
-    {
-      "type": "subtitle",
-      "start": 2.5,
-      "end": 5,
-      "text": "第一个：桌面收纳盒，拿取顺手还不乱"
-    },
-    {
-      "type": "clip",
-      "asset": "main",
-      "start": 5,
-      "end": 7.5
-    },
-    {
-      "type": "subtitle",
-      "start": 5,
-      "end": 7.5,
-      "text": "第二个：便携支架，拍视频和开会都能用"
-    }
-  ],
   "subtitles": {
     "fontName": "PingFang SC",
     "fontSize": 58,
@@ -63,6 +25,19 @@
     "duckingAttackMs": 15,
     "duckingReleaseMs": 300,
     "voiceBoost": 1.08
+  },
+  "aiEdit": {
+    "enabled": true,
+    "mode": "smart",
+    "templateKind": "douyin-goods",
+    "maxDurationSeconds": 24,
+    "hookSeconds": 3,
+    "ctaSeconds": 4,
+    "scriptLines": [
+      "这 3 个小物件，办公室真的离不开",
+      "先看桌面收纳盒，拿取顺手还不乱",
+      "最后这个便携支架，拍视频和开会都能用"
+    ]
   },
   "cover": {
     "enabled": true,
