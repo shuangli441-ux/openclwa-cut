@@ -21,6 +21,11 @@ type InitProjectOptions struct {
 	BrandName         string
 	CTA               string
 	AIMode            string
+	AIProvider        string
+	AICommand         string
+	AIModel           string
+	AIPromptHint      string
+	AIAutoGenerate    bool
 	ScriptLines       []string
 	MaxSeconds        float64
 	HookSeconds       float64
@@ -56,6 +61,11 @@ func InitProjectWithOptions(dir, name string, opts InitProjectOptions) error {
 		AIEdit: AIEditSettings{
 			Enabled:            !opts.DisableAIScaffold,
 			Mode:               valueOrDefault(strings.TrimSpace(opts.AIMode), "smart"),
+			Provider:           valueOrDefault(stringsTrimLower(opts.AIProvider), AIProviderBuiltin),
+			Command:            strings.TrimSpace(opts.AICommand),
+			Model:              strings.TrimSpace(opts.AIModel),
+			PromptHint:         strings.TrimSpace(opts.AIPromptHint),
+			AutoGenerate:       opts.AIAutoGenerate,
 			TemplateKind:       kind,
 			ScriptLines:        normalizeScriptLines(opts.ScriptLines),
 			MaxDurationSeconds: opts.MaxSeconds,
@@ -115,7 +125,21 @@ func InitProjectWithOptions(dir, name string, opts InitProjectOptions) error {
 	}
 
 	project.ApplyDefaults()
-	return writeProjectJSON(filepath.Join(dir, "project.json"), project)
+	projectPath := filepath.Join(dir, "project.json")
+	if err := writeProjectJSON(projectPath, project); err != nil {
+		return err
+	}
+	if opts.AIAutoGenerate {
+		if strings.TrimSpace(opts.InputVideo) == "" {
+			return fmt.Errorf("启用 AI 自动生成脚本时必须提供 -input")
+		}
+		return GenerateAIScriptProject(projectPath, AIScriptOptions{
+			Provider: project.AIEdit.Provider,
+			Model:    project.AIEdit.Model,
+			Force:    true,
+		})
+	}
+	return nil
 }
 
 func inferInitProjectTemplateKind(name, title string, opts InitProjectOptions) string {

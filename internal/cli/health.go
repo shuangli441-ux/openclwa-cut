@@ -16,7 +16,7 @@ type healthItem struct {
 
 // RunHealthCheck 检查 FFmpeg、滤镜和字体环境是否满足渲染要求。
 func RunHealthCheck() error {
-	items := make([]healthItem, 0, 8)
+	items := make([]healthItem, 0, 10)
 
 	ffmpegVersion, err := binaryVersion("ffmpeg")
 	if err != nil {
@@ -50,6 +50,11 @@ func RunHealthCheck() error {
 	} else {
 		items = append(items, healthItem{Name: "font", OK: true, Detail: fontPath})
 	}
+	if codexVersion, err := binaryVersion("codex", "--version"); err != nil {
+		items = append(items, healthItem{Name: "codex", OK: false, Detail: "未找到本机 Codex CLI；如需 AI 自动写脚本，请先安装 codex", Warning: true})
+	} else {
+		items = append(items, healthItem{Name: "codex", OK: true, Detail: codexVersion})
+	}
 
 	fmt.Println("clawcut 环境检查")
 	for _, item := range items {
@@ -70,12 +75,28 @@ func RunHealthCheck() error {
 	return nil
 }
 
-func binaryVersion(name string) (string, error) {
-	out, err := ffmpeg.RunCapture(name, "-version")
+func binaryVersion(name string, versionArgs ...string) (string, error) {
+	args := versionArgs
+	if len(args) == 0 {
+		args = []string{"-version"}
+	}
+	out, err := ffmpeg.RunCapture(name, args...)
 	if err != nil {
 		return "", err
 	}
-	line := strings.TrimSpace(strings.SplitN(string(out), "\n", 2)[0])
+	lines := strings.Split(string(out), "\n")
+	line := ""
+	for _, item := range lines {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		if strings.HasPrefix(strings.ToUpper(item), "WARNING:") {
+			continue
+		}
+		line = item
+		break
+	}
 	if line == "" {
 		return "已安装", nil
 	}

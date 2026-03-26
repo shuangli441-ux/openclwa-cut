@@ -6,6 +6,7 @@
 - 默认输出抖音标准：`1080x1920`、`30fps`、`libx264 + aac`
 - 项目 JSON 自动补默认值，减少必填字段
 - 内置 AI 剪辑模块：按模板自动生成更适合抖音投放的时间线
+- 支持接入本机 `codex` CLI，为项目自动生成脚本句子
 - 支持只写 `aiEdit.scriptLines`，不手工写 `timeline` 也能自动出片
 - 自动处理相对路径、中文路径、空格路径、`~` 路径、环境变量路径
 - 字幕多级降级：硬字幕优先，失败时自动输出 `.ass`，不中断成片
@@ -29,6 +30,9 @@
 项目管理：
 - `clawcut project-init`
 - `clawcut validate`
+
+AI 能力：
+- `clawcut ai-script`
 
 音乐能力：
 - `clawcut music-init`
@@ -151,7 +155,14 @@ clawcut render -project ./projects/demo/project.json
 
 说明：
 - `project-init` 现在默认会生成 AI 剪辑脚手架，包括 `aiEdit.templateKind`、`aiEdit.scriptLines` 和自动时间线。
+- 如果你本机已经装了 `codex`，可以在初始化后继续用它自动写脚本：
+
+```bash
+clawcut ai-script -project ./projects/demo/project.json
+```
+
 - 如果你只想保留传统的整段 clip 时间线，可以追加 `-disable-ai`。
+- 如果想在初始化时就直接调用本机 Codex，可追加 `-ai-provider codex -ai-auto-generate`。
 
 批量渲染整个目录：
 
@@ -170,6 +181,38 @@ clawcut music-match -style qa-short
 - `qa-short`、`goods-recommend`、`promo-short`、`douyin-ads` 会自动映射到音乐库里的 `electronic / pop / upbeat / trap` 等目录风格。
 - 如果项目里没有手工 `clip` 时间线，但填写了 `aiEdit.scriptLines`，`clawcut render` 和 `clawcut validate` 会在执行前自动补齐剪辑片段。
 - `project-init` 支持 `-ai-kind`、`-scripts`、`-brand`、`-cta`，可以直接初始化 AI 口播项目。
+- `project-init` 还支持 `-ai-provider codex`、`-ai-model`、`-ai-auto-generate`，可以调用本机 Codex 生成脚本。
+
+## 本机 Codex 接入
+
+如果你的电脑已经可以直接运行 `codex` 命令，就可以把它接成 `clawcut` 的脚本生成后端。
+
+初始化项目时直接启用：
+
+```bash
+clawcut project-init \
+  -dir ./projects/codex-demo \
+  -name codex-demo \
+  -input /path/to/input.mp4 \
+  -title "库存混乱怎么处理" \
+  -ai-kind douyin-ads \
+  -ai-provider codex \
+  -ai-auto-generate
+```
+
+对现有项目单独生成脚本：
+
+```bash
+clawcut ai-script \
+  -project ./projects/codex-demo/project.json \
+  -provider codex \
+  -force
+```
+
+说明：
+- `ai-script` 会回写 `aiEdit.scriptLines`，并重新生成时间线。
+- 默认读取你本机 `codex` 的登录态和配置。
+- 如果 `codex` 不在 PATH 里，可以在项目里写 `aiEdit.command` 指定命令路径。
 
 默认音乐库路径会写到系统配置目录：
 - macOS: `~/Library/Application Support/clawcut/music_library.json`
@@ -238,6 +281,9 @@ clawcut template-init \
   "aiEdit": {
     "enabled": true,
     "mode": "smart",
+    "provider": "codex",
+    "command": "codex",
+    "autoGenerate": false,
     "templateKind": "douyin-ads",
     "maxDurationSeconds": 28,
     "hookSeconds": 3,

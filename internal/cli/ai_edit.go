@@ -61,6 +61,9 @@ func (p *Project) PrepareAIEditTimeline() error {
 
 	scriptLines := p.ResolvedAIEditScriptLines()
 	if len(scriptLines) == 0 {
+		if p.ResolvedAIProvider() == AIProviderCodex {
+			return fmt.Errorf("当前项目已配置 aiEdit.provider=codex，但还没有 aiEdit.scriptLines，请先运行 clawcut ai-script -project <project.json> 生成脚本")
+		}
 		return nil
 	}
 

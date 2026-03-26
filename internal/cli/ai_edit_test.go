@@ -3,6 +3,7 @@ package cli
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -113,5 +114,25 @@ func TestResolveAIEditTemplateKindUsesProjectSignals(t *testing.T) {
 
 	if got := project.ResolveAIEditTemplateKind(); got != TemplateDouyinAds {
 		t.Fatalf("expected ads template kind, got %q", got)
+	}
+}
+
+func TestPrepareAIEditTimelineReturnsCodexHintWithoutScripts(t *testing.T) {
+	project := &Project{
+		Project: "codex-hint",
+		Assets: []Asset{
+			{ID: "main", Type: "video", Path: "/tmp/input.mp4"},
+		},
+		AIEdit: AIEditSettings{
+			Enabled:  true,
+			Mode:     "smart",
+			Provider: AIProviderCodex,
+		},
+	}
+	project.ApplyDefaults()
+
+	err := project.PrepareAIEditTimeline()
+	if err == nil || !strings.Contains(err.Error(), "clawcut ai-script") {
+		t.Fatalf("expected codex hint error, got %v", err)
 	}
 }

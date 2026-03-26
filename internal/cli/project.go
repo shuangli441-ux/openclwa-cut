@@ -110,6 +110,11 @@ type CoverSettings struct {
 type AIEditSettings struct {
 	Enabled            bool     `json:"enabled,omitempty"`
 	Mode               string   `json:"mode,omitempty"`
+	Provider           string   `json:"provider,omitempty"`
+	Command            string   `json:"command,omitempty"`
+	Model              string   `json:"model,omitempty"`
+	PromptHint         string   `json:"promptHint,omitempty"`
+	AutoGenerate       bool     `json:"autoGenerate,omitempty"`
 	TemplateKind       string   `json:"templateKind,omitempty"`
 	ScriptLines        []string `json:"scriptLines,omitempty"`
 	MaxDurationSeconds float64  `json:"maxDurationSeconds,omitempty"`
@@ -141,6 +146,13 @@ type Dimensions struct {
 	Width  int
 	Height int
 }
+
+const (
+	// AIProviderBuiltin 表示使用 clawcut 内置脚本模板。
+	AIProviderBuiltin = "builtin"
+	// AIProviderCodex 表示使用本机 Codex CLI 生成脚本。
+	AIProviderCodex = "codex"
+)
 
 // InitProject 初始化一个空项目目录，并写入默认项目配置。
 func InitProject(dir, name string) error {
@@ -180,6 +192,7 @@ func InitProject(dir, name string) error {
 		AIEdit: AIEditSettings{
 			Enabled:            true,
 			Mode:               "smart",
+			Provider:           AIProviderBuiltin,
 			MaxDurationSeconds: 35,
 			HookSeconds:        3,
 			CTASeconds:         4,
@@ -402,6 +415,12 @@ func (p *Project) ApplyDefaults() {
 	}
 	if p.AIEdit.Mode == "" {
 		p.AIEdit.Mode = "smart"
+	}
+	if p.AIEdit.Provider == "" {
+		p.AIEdit.Provider = AIProviderBuiltin
+	}
+	if p.AIEdit.Command == "" && p.ResolvedAIProvider() == AIProviderCodex {
+		p.AIEdit.Command = "codex"
 	}
 	if p.AIEdit.MaxDurationSeconds == 0 {
 		p.AIEdit.MaxDurationSeconds = 35
@@ -806,6 +825,9 @@ func (p *Project) Validate() error {
 	if mode := strings.TrimSpace(strings.ToLower(p.AIEdit.Mode)); mode != "" && mode != "smart" && mode != "basic" {
 		return fmt.Errorf("aiEdit.mode 仅支持 smart 或 basic，当前为 %q", p.AIEdit.Mode)
 	}
+	if provider := p.ResolvedAIProvider(); provider != AIProviderBuiltin && provider != AIProviderCodex {
+		return fmt.Errorf("aiEdit.provider 仅支持 %s 或 %s，当前为 %q", AIProviderBuiltin, AIProviderCodex, p.AIEdit.Provider)
+	}
 	if p.AIEdit.TemplateKind != "" && normalizeTemplateKind(p.AIEdit.TemplateKind) == "" {
 		return fmt.Errorf("aiEdit.templateKind 仅支持 %s、%s 或 %s，当前为 %q", TemplateDouyinQA, TemplateDouyinGoods, TemplateDouyinAds, p.AIEdit.TemplateKind)
 	}
@@ -879,6 +901,33 @@ func (p *Project) AssetByID(id string) (Asset, bool) {
 		}
 	}
 	return Asset{}, false
+}
+
+// ResolvedAIProvider 返回最终生效的 AI 提供方。
+func (p *Project) ResolvedAIProvider() string {
+	if p == nil {
+		return AIProviderBuiltin
+	}
+	provider := stringsTrimLower(p.AIEdit.Provider)
+	if provider == "" {
+		return AIProviderBuiltin
+	}
+	return provider
+}
+
+// ResolvedAICommand 返回最终生效的 AI 命令路径。
+func (p *Project) ResolvedAICommand() string {
+	if p == nil {
+		return "codex"
+	}
+	command := strings.TrimSpace(p.AIEdit.Command)
+	if command != "" {
+		return command
+	}
+	if p.ResolvedAIProvider() == AIProviderCodex {
+		return "codex"
+	}
+	return ""
 }
 
 func resolvePath(baseDir, value string) string {
