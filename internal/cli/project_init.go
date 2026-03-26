@@ -5,23 +5,40 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/shuangli441-ux/openclwa-cut/internal/ffmpeg"
 )
 
 // InitProjectOptions 描述从单个视频快速初始化项目时的可选参数。
 type InitProjectOptions struct {
-	InputVideo string
-	OutputPath string
-	MusicPath  string
-	MusicStyle string
+	InputVideo        string
+	OutputPath        string
+	MusicPath         string
+	MusicStyle        string
+	Title             string
+	TemplateKind      string
+	BrandName         string
+	CTA               string
+	AIMode            string
+	ScriptLines       []string
+	MaxSeconds        float64
+	HookSeconds       float64
+	CTASeconds        float64
+	DisableAIScaffold bool
 }
 
-// InitProjectWithOptions 根据输入视频生成一个可直接渲染的最小项目。
+// InitProjectWithOptions 根据输入视频生成一个可直接渲染的项目，并默认写入 AI 剪辑脚手架。
 func InitProjectWithOptions(dir, name string, opts InitProjectOptions) error {
 	if err := ensureProjectDirectories(dir); err != nil {
 		return err
 	}
+
+	title := strings.TrimSpace(opts.Title)
+	if title == "" {
+		title = name
+	}
+	kind := inferInitProjectTemplateKind(name, title, opts)
 
 	project := Project{
 		Project: name,
@@ -31,6 +48,19 @@ func InitProjectWithOptions(dir, name string, opts InitProjectOptions) error {
 		},
 		Cover: CoverSettings{
 			Enabled: true,
+			Title:   title,
+		},
+		Publish: PublishSettings{
+			Title: title,
+		},
+		AIEdit: AIEditSettings{
+			Enabled:            !opts.DisableAIScaffold,
+			Mode:               valueOrDefault(strings.TrimSpace(opts.AIMode), "smart"),
+			TemplateKind:       kind,
+			ScriptLines:        normalizeScriptLines(opts.ScriptLines),
+			MaxDurationSeconds: opts.MaxSeconds,
+			HookSeconds:        opts.HookSeconds,
+			CTASeconds:         opts.CTASeconds,
 		},
 	}
 
@@ -66,19 +96,46 @@ func InitProjectWithOptions(dir, name string, opts InitProjectOptions) error {
 				Path: normalizeProjectPathValue(dir, inputPath),
 			},
 		}
-		project.Timeline = []TimelineItem{
-			{
-				Type:  "clip",
-				Asset: "main",
-				Start: 0,
-				End:   duration,
-			},
+		if opts.DisableAIScaffold {
+			project.Timeline = []TimelineItem{
+				{
+					Type:  "clip",
+					Asset: "main",
+					Start: 0,
+					End:   duration,
+				},
+			}
+		} else if err := applyTemplateCreativeDefaults(&project, kind, title, strings.TrimSpace(opts.BrandName), strings.TrimSpace(opts.CTA), duration, project.AIEdit.ScriptLines); err != nil {
+			return err
 		}
-		project.Cover.Title = name
+	} else if !opts.DisableAIScaffold {
+		if err := applyTemplateCreativeDefaults(&project, kind, title, strings.TrimSpace(opts.BrandName), strings.TrimSpace(opts.CTA), 0, project.AIEdit.ScriptLines); err != nil {
+			return err
+		}
 	}
 
 	project.ApplyDefaults()
 	return writeProjectJSON(filepath.Join(dir, "project.json"), project)
+}
+
+func inferInitProjectTemplateKind(name, title string, opts InitProjectOptions) string {
+	if kind := normalizeTemplateKind(opts.TemplateKind); kind != "" {
+		return kind
+	}
+	seed := &Project{
+		Project: name,
+		Music: MusicSettings{
+			Style: opts.MusicStyle,
+		},
+		Publish: PublishSettings{
+			Title:       title,
+			Description: strings.TrimSpace(opts.BrandName + " " + opts.CTA),
+		},
+		AIEdit: AIEditSettings{
+			ScriptLines: normalizeScriptLines(opts.ScriptLines),
+		},
+	}
+	return seed.ResolveAIEditTemplateKind()
 }
 
 // normalizeProjectPathValue 尽量把项目内引用写成相对路径，便于跨机器迁移。

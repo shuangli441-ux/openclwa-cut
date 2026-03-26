@@ -138,9 +138,20 @@ clawcut render -project ./projects/demo/project.json
 如果你要从零建一个最小项目：
 
 ```bash
-clawcut project-init -dir ./projects/demo -name demo -input /path/to/input.mp4
+clawcut project-init \
+  -dir ./projects/demo \
+  -name demo \
+  -input /path/to/input.mp4 \
+  -title "误操作预收款怎么撤销" \
+  -ai-kind douyin-qa \
+  -scripts "先抛问题|中段给结论|结尾引导收藏"
+
 clawcut render -project ./projects/demo/project.json
 ```
+
+说明：
+- `project-init` 现在默认会生成 AI 剪辑脚手架，包括 `aiEdit.templateKind`、`aiEdit.scriptLines` 和自动时间线。
+- 如果你只想保留传统的整段 clip 时间线，可以追加 `-disable-ai`。
 
 批量渲染整个目录：
 
@@ -158,6 +169,7 @@ clawcut music-match -style qa-short
 说明：
 - `qa-short`、`goods-recommend`、`promo-short`、`douyin-ads` 会自动映射到音乐库里的 `electronic / pop / upbeat / trap` 等目录风格。
 - 如果项目里没有手工 `clip` 时间线，但填写了 `aiEdit.scriptLines`，`clawcut render` 和 `clawcut validate` 会在执行前自动补齐剪辑片段。
+- `project-init` 支持 `-ai-kind`、`-scripts`、`-brand`、`-cta`，可以直接初始化 AI 口播项目。
 
 默认音乐库路径会写到系统配置目录：
 - macOS: `~/Library/Application Support/clawcut/music_library.json`

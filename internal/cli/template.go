@@ -30,6 +30,7 @@ type TemplateInitOptions struct {
 	BrandName   string
 	CTA         string
 	AIMode      string
+	ScriptLines []string
 	MaxSeconds  float64
 	HookSeconds float64
 	CTASeconds  float64
@@ -212,22 +213,51 @@ func buildTemplateProject(kind, name, projectPath, inputVideo, outputVideo strin
 	switch kind {
 	case TemplateDouyinQA:
 		project.Project = valueOrDefault(strings.TrimSpace(name), "douyin-qa-template")
+	case TemplateDouyinGoods:
+		project.Project = valueOrDefault(strings.TrimSpace(name), "douyin-goods-template")
+	case TemplateDouyinAds:
+		project.Project = valueOrDefault(strings.TrimSpace(name), "douyin-ads-template")
+	default:
+		return Project{}, fmt.Errorf("模板类型不支持：%s", kind)
+	}
+	if err := applyTemplateCreativeDefaults(&project, kind, title, brandName, cta, duration, opts.ScriptLines); err != nil {
+		return Project{}, err
+	}
+
+	project.ApplyDefaults()
+	return project, nil
+}
+
+func applyTemplateCreativeDefaults(project *Project, kind, title, brandName, cta string, duration float64, customScriptLines []string) error {
+	kind = normalizeTemplateKind(kind)
+	if kind == "" {
+		return fmt.Errorf("模板类型不支持：%s", kind)
+	}
+	project.AIEdit.TemplateKind = kind
+	project.AIEdit.ScriptLines = normalizeScriptLines(customScriptLines)
+	if len(project.AIEdit.ScriptLines) == 0 {
+		project.AIEdit.ScriptLines = defaultTemplateScriptLines(kind, title, brandName, cta)
+	}
+
+	switch kind {
+	case TemplateDouyinQA:
+		project.Subtitles.PrimaryColor = "#FFFFFF"
+		project.Subtitles.OutlineColor = "#000000"
+		project.Subtitles.Outline = 3
+		project.Subtitles.MaxCharsPerLine = 18
 		project.AIEdit.MaxDurationSeconds = maxFloat(project.AIEdit.MaxDurationSeconds, 35)
 		project.AIEdit.HookSeconds = maxFloat(project.AIEdit.HookSeconds, 3)
 		project.AIEdit.CTASeconds = maxFloat(project.AIEdit.CTASeconds, 5)
-		project.AIEdit.ScriptLines = []string{
-			"开头先抛问题，快速抓住注意力",
-			"中段直接给结论，减少观众流失",
-			"结尾补动作建议，引导评论或收藏",
-		}
-		project.Timeline = BuildSmartTemplateTimeline(duration, "main", project.AIEdit.ScriptLines, kind, project.AIEdit)
 		if project.Music.Style == "" {
 			project.Music.Style = "qa-short"
 		}
-		project.Publish.Hashtags = []string{"#知识分享", "#抖音问答", "#短视频干货"}
-		project.Publish.Description = "三段式答疑结构，适合财税、运营、职场咨询等知识型短视频。"
+		if len(project.Publish.Hashtags) == 0 {
+			project.Publish.Hashtags = []string{"#知识分享", "#抖音问答", "#短视频干货"}
+		}
+		if strings.TrimSpace(project.Publish.Description) == "" {
+			project.Publish.Description = "三段式答疑结构，适合财税、运营、职场咨询等知识型短视频。"
+		}
 	case TemplateDouyinGoods:
-		project.Project = valueOrDefault(strings.TrimSpace(name), "douyin-goods-template")
 		project.Subtitles.PrimaryColor = "#FFF4C9"
 		project.Subtitles.OutlineColor = "#111111"
 		project.Subtitles.Outline = 4
@@ -235,19 +265,16 @@ func buildTemplateProject(kind, name, projectPath, inputVideo, outputVideo strin
 		project.AIEdit.MaxDurationSeconds = maxFloat(project.AIEdit.MaxDurationSeconds, 30)
 		project.AIEdit.HookSeconds = maxFloat(project.AIEdit.HookSeconds, 3)
 		project.AIEdit.CTASeconds = maxFloat(project.AIEdit.CTASeconds, 4)
-		project.AIEdit.ScriptLines = []string{
-			"先说使用场景，开头就把痛点讲透",
-			"展示核心卖点，补一句真实体验感受",
-			"最后给购买理由，顺手引导点击和收藏",
-		}
-		project.Timeline = BuildSmartTemplateTimeline(duration, "main", project.AIEdit.ScriptLines, kind, project.AIEdit)
 		if project.Music.Style == "" {
 			project.Music.Style = "goods-recommend"
 		}
-		project.Publish.Hashtags = []string{"#好物推荐", "#抖音种草", "#购物分享"}
-		project.Publish.Description = "三段式好物推荐结构，适合口播测评、开箱展示和高转化种草内容。"
+		if len(project.Publish.Hashtags) == 0 {
+			project.Publish.Hashtags = []string{"#好物推荐", "#抖音种草", "#购物分享"}
+		}
+		if strings.TrimSpace(project.Publish.Description) == "" {
+			project.Publish.Description = "三段式好物推荐结构，适合口播测评、开箱展示和高转化种草内容。"
+		}
 	case TemplateDouyinAds:
-		project.Project = valueOrDefault(strings.TrimSpace(name), "douyin-ads-template")
 		project.Subtitles.PrimaryColor = "#FFF2B2"
 		project.Subtitles.OutlineColor = "#111111"
 		project.Subtitles.Outline = 4
@@ -256,19 +283,42 @@ func buildTemplateProject(kind, name, projectPath, inputVideo, outputVideo strin
 		project.AIEdit.MaxDurationSeconds = maxFloat(project.AIEdit.MaxDurationSeconds, 28)
 		project.AIEdit.HookSeconds = maxFloat(project.AIEdit.HookSeconds, 3)
 		project.AIEdit.CTASeconds = maxFloat(project.AIEdit.CTASeconds, 5)
-		project.AIEdit.ScriptLines = buildAdScriptLines(title, brandName, cta)
-		project.Timeline = BuildSmartTemplateTimeline(duration, "main", project.AIEdit.ScriptLines, kind, project.AIEdit)
 		if project.Music.Style == "" {
 			project.Music.Style = "douyin-ads"
 		}
-		project.Publish.Hashtags = []string{"#抖音广告", "#信息流投放", "#短视频投放"}
-		project.Publish.Description = buildAdPublishDescription(title, brandName, cta)
+		if len(project.Publish.Hashtags) == 0 {
+			project.Publish.Hashtags = []string{"#抖音广告", "#信息流投放", "#短视频投放"}
+		}
+		if strings.TrimSpace(project.Publish.Description) == "" {
+			project.Publish.Description = buildAdPublishDescription(title, brandName, cta)
+		}
 	default:
-		return Project{}, fmt.Errorf("模板类型不支持：%s", kind)
+		return fmt.Errorf("模板类型不支持：%s", kind)
 	}
 
-	project.ApplyDefaults()
-	return project, nil
+	if duration > 0 && len(project.AIEdit.ScriptLines) > 0 {
+		project.Timeline = BuildSmartTemplateTimeline(duration, "main", project.AIEdit.ScriptLines, kind, project.AIEdit)
+	}
+	return nil
+}
+
+func defaultTemplateScriptLines(kind, title, brandName, cta string) []string {
+	switch normalizeTemplateKind(kind) {
+	case TemplateDouyinGoods:
+		return []string{
+			"先说使用场景，开头就把痛点讲透",
+			"展示核心卖点，补一句真实体验感受",
+			"最后给购买理由，顺手引导点击和收藏",
+		}
+	case TemplateDouyinAds:
+		return buildAdScriptLines(title, brandName, cta)
+	default:
+		return []string{
+			"开头先抛问题，快速抓住注意力",
+			"中段直接给结论，减少观众流失",
+			"结尾补动作建议，引导评论或收藏",
+		}
+	}
 }
 
 func buildAdScriptLines(title, brandName, cta string) []string {
