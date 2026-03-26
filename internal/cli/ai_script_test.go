@@ -35,11 +35,35 @@ func TestBuildCodexScriptPromptIncludesProjectContext(t *testing.T) {
 			PromptHint:   "品牌语气要稳重",
 		},
 	}
-	prompt := buildCodexScriptPrompt(project, Asset{Path: "/tmp/input.mp4"}, 22)
-	for _, expected := range []string{"库存混乱怎么处理", "适合企业服务投放", "#抖音广告", "品牌语气要稳重", "目标句数：4 句"} {
+	prompt := buildCodexScriptPrompt(project, Asset{Path: "/tmp/input.mp4"}, 22, expectedScriptLineCount(TemplateDouyinAds, 22))
+	for _, expected := range []string{"库存混乱怎么处理", "适合企业服务投放", "#抖音广告", "品牌语气要稳重", "目标句数：5 句"} {
 		if !strings.Contains(prompt, expected) {
 			t.Fatalf("expected prompt to contain %q, got %s", expected, prompt)
 		}
+	}
+}
+
+func TestExpectedScriptLineCountFollowsDuration(t *testing.T) {
+	if got := expectedScriptLineCount(TemplateDouyinQA, 32.3); got < 7 {
+		t.Fatalf("expected longer QA clip to request denser script, got %d", got)
+	}
+	if got := expectedScriptLineCount(TemplateDouyinAds, 9); got != 4 {
+		t.Fatalf("expected short ads clip to keep minimum 4 lines, got %d", got)
+	}
+}
+
+func TestExpandAIScriptLineCountSplitsMiddleSentence(t *testing.T) {
+	lines := []string{
+		"预收款误操作，怎么撤销？",
+		"打开预收记录，找到对应单据，点击撤销，保存后再核对一次。",
+		"撤销前先核对，怕忘先收藏。",
+	}
+	got := expandAIScriptLineCount(lines, 6, 14)
+	if len(got) < 5 {
+		t.Fatalf("expected expanded script lines, got %+v", got)
+	}
+	if got[0] != "预收款误操作，怎么撤销？" {
+		t.Fatalf("expected hook line to remain first, got %+v", got)
 	}
 }
 

@@ -211,6 +211,7 @@ clawcut ai-script \
 
 说明：
 - `ai-script` 会回写 `aiEdit.scriptLines`，并重新生成时间线。
+- `ai-script` 会按素材时长自动估算脚本句数，默认尽量保持每 3 到 5 秒就有一句有效信息。
 - 默认读取你本机 `codex` 的登录态和配置。
 - 如果 `codex` 不在 PATH 里，可以在项目里写 `aiEdit.command` 指定命令路径。
 

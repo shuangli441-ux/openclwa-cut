@@ -3,10 +3,12 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/shuangli441-ux/openclwa-cut/internal/ffmpeg"
 )
@@ -128,8 +130,13 @@ func generateAIScriptLinesWithCodex(project *Project, workDir string) ([]string,
 	if err != nil {
 		return nil, err
 	}
-	prompt := buildCodexScriptPrompt(project, asset, duration)
-	return runCodexScriptGenerator(project.ResolvedAICommand(), workDir, strings.TrimSpace(project.AIEdit.Model), prompt)
+	expectedCount := expectedScriptLineCount(project.ResolveAIEditTemplateKind(), duration)
+	prompt := buildCodexScriptPrompt(project, asset, duration, expectedCount)
+	lines, err := runCodexScriptGenerator(project.ResolvedAICommand(), workDir, strings.TrimSpace(project.AIEdit.Model), prompt)
+	if err != nil {
+		return nil, err
+	}
+	return expandAIScriptLineCount(lines, expectedCount, maxInt(project.Subtitles.MaxCharsPerLine, 14)), nil
 }
 
 func aiTimelineSource(project *Project) (float64, string, error) {
@@ -153,9 +160,9 @@ func aiTimelineSource(project *Project) (float64, string, error) {
 	return duration, assetID, nil
 }
 
-func buildCodexScriptPrompt(project *Project, asset Asset, duration float64) string {
+func buildCodexScriptPrompt(project *Project, asset Asset, duration float64, expectedCount int) string {
 	kind := project.ResolveAIEditTemplateKind()
-	expectedCount := expectedScriptLineCount(kind)
+	minCount, maxCount := expectedScriptLineRange(expectedCount)
 	title := project.ResolvedPublishTitle()
 	if title == "" {
 		title = strings.TrimSpace(project.Project)
@@ -165,10 +172,11 @@ func buildCodexScriptPrompt(project *Project, asset Asset, duration float64) str
 		"你是工业化短视频脚本策划，请为抖音成片生成可直接用作字幕和镜头节奏的口播文案。",
 		"只输出一个 JSON 对象，不要输出解释、Markdown 或代码块。",
 		fmt.Sprintf("模板类型：%s。", kind),
-		fmt.Sprintf("目标句数：%d 句。", expectedCount),
+		fmt.Sprintf("目标句数：%d 句，允许范围 %d-%d 句。", expectedCount, minCount, maxCount),
 		fmt.Sprintf("单句建议：控制在 %d 个中文字符以内，适合竖屏字幕。", maxInt(project.Subtitles.MaxCharsPerLine, 14)),
 		fmt.Sprintf("素材文件：%s。", filepath.Base(asset.Path)),
 		fmt.Sprintf("素材时长：%.1f 秒。", duration),
+		"节奏要求：整条视频保持 3 到 5 秒就有一句有效信息，不要用 10 秒以上的大长句撑时长。",
 	}
 	if title != "" {
 		lines = append(lines, "主题标题："+title+"。")
@@ -200,7 +208,7 @@ func buildCodexScriptPrompt(project *Project, asset Asset, duration float64) str
 	default:
 		lines = append(lines,
 			"结构要求：先抛问题，中段给结论或步骤，结尾补提醒或引导收藏。",
-			"文案要求：适合教程、答疑、知识类口播。",
+			"文案要求：适合教程、答疑、知识类口播。步骤多时要拆成多句，避免一句话覆盖整个中段。",
 		)
 	}
 
@@ -301,15 +309,56 @@ func parseCodexScriptResponse(data []byte) ([]string, error) {
 	return response.ScriptLines, nil
 }
 
-func expectedScriptLineCount(kind string) int {
+func expectedScriptLineCount(kind string, duration float64) int {
+	if duration <= 0 {
+		duration = 18
+	}
+	count := int(math.Round(duration / 4.2))
+	if count < 3 {
+		count = 3
+	}
 	switch normalizeTemplateKind(kind) {
 	case TemplateDouyinAds:
-		return 4
+		if count < 4 {
+			count = 4
+		}
+		if count > 8 {
+			count = 8
+		}
 	case TemplateDouyinGoods:
-		return 3
+		if count < 4 {
+			count = 4
+		}
+		if count > 8 {
+			count = 8
+		}
 	default:
-		return 3
+		if count < 4 {
+			count = 4
+		}
+		if count > 10 {
+			count = 10
+		}
 	}
+	return count
+}
+
+func expectedScriptLineRange(targetCount int) (int, int) {
+	if targetCount < 3 {
+		targetCount = 3
+	}
+	minCount := targetCount - 1
+	if minCount < 3 {
+		minCount = 3
+	}
+	maxCount := targetCount + 1
+	if maxCount > 10 {
+		maxCount = 10
+	}
+	if maxCount < minCount {
+		maxCount = minCount
+	}
+	return minCount, maxCount
 }
 
 func maxInt(value int, fallback int) int {
@@ -319,6 +368,146 @@ func maxInt(value int, fallback int) int {
 	return value
 }
 
+func expandAIScriptLineCount(lines []string, targetCount int, maxChars int) []string {
+	result := normalizeScriptLines(lines)
+	if len(result) == 0 || targetCount <= len(result) {
+		return result
+	}
+	if maxChars <= 0 {
+		maxChars = 14
+	}
+
+	for len(result) < targetCount {
+		expanded := false
+		for _, index := range aiScriptExpansionOrder(len(result)) {
+			neededParts := targetCount - len(result) + 1
+			parts := splitAIScriptLine(result[index], maxChars, neededParts)
+			if len(parts) <= 1 {
+				continue
+			}
+
+			next := make([]string, 0, len(result)+len(parts)-1)
+			next = append(next, result[:index]...)
+			next = append(next, parts...)
+			next = append(next, result[index+1:]...)
+			result = normalizeScriptLines(next)
+			expanded = true
+			if len(result) >= targetCount {
+				break
+			}
+		}
+		if !expanded {
+			break
+		}
+	}
+
+	maxCount := targetCount + 1
+	if maxCount < 3 {
+		maxCount = 3
+	}
+	if len(result) > maxCount {
+		result = result[:maxCount]
+	}
+	return result
+}
+
+func aiScriptExpansionOrder(count int) []int {
+	if count <= 0 {
+		return nil
+	}
+	order := make([]int, 0, count)
+	if count > 2 {
+		for i := 1; i < count-1; i++ {
+			order = append(order, i)
+		}
+		order = append(order, 0, count-1)
+		return order
+	}
+	for i := 0; i < count; i++ {
+		order = append(order, i)
+	}
+	return order
+}
+
+func splitAIScriptLine(line string, maxChars int, maxParts int) []string {
+	line = strings.TrimSpace(line)
+	if line == "" {
+		return nil
+	}
+	if maxParts < 2 {
+		return []string{line}
+	}
+
+	parts := splitAIScriptLineByPunctuation(line)
+	parts = limitAIScriptParts(parts, maxParts)
+	if len(parts) > 1 {
+		return parts
+	}
+	return splitAIScriptLineByLength(line, maxChars, maxParts)
+}
+
+func splitAIScriptLineByPunctuation(line string) []string {
+	raw := strings.FieldsFunc(line, func(r rune) bool {
+		switch r {
+		case '，', ',', '。', '！', '!', '？', '?', '；', ';', '：', ':':
+			return true
+		default:
+			return false
+		}
+	})
+	parts := make([]string, 0, len(raw))
+	for _, item := range raw {
+		item = strings.TrimSpace(item)
+		if utf8.RuneCountInString(item) < 2 {
+			continue
+		}
+		parts = append(parts, item)
+	}
+	if len(parts) <= 1 {
+		return []string{line}
+	}
+	return parts
+}
+
+func splitAIScriptLineByLength(line string, maxChars int, maxParts int) []string {
+	runes := []rune(strings.TrimSpace(line))
+	if len(runes) <= maxChars || maxParts < 2 {
+		return []string{string(runes)}
+	}
+	chunkSize := maxChars
+	if chunkSize < 8 {
+		chunkSize = 8
+	}
+
+	parts := make([]string, 0, (len(runes)/chunkSize)+1)
+	for start := 0; start < len(runes); start += chunkSize {
+		end := start + chunkSize
+		if end > len(runes) {
+			end = len(runes)
+		}
+		part := strings.TrimSpace(string(runes[start:end]))
+		if utf8.RuneCountInString(part) < 2 {
+			continue
+		}
+		parts = append(parts, part)
+	}
+	return limitAIScriptParts(parts, maxParts)
+}
+
+func limitAIScriptParts(parts []string, maxParts int) []string {
+	parts = normalizeScriptLines(parts)
+	if len(parts) <= maxParts || maxParts < 2 {
+		return parts
+	}
+	limited := append([]string{}, parts[:maxParts-1]...)
+	tail := strings.Join(parts[maxParts-1:], "，")
+	tail = strings.TrimSpace(tail)
+	if tail != "" {
+		limited = append(limited, tail)
+	}
+	return limited
+}
+
 const codexScriptOutputSchema = `{
   "type": "object",
   "additionalProperties": false,
@@ -326,7 +515,7 @@ const codexScriptOutputSchema = `{
     "scriptLines": {
       "type": "array",
       "minItems": 3,
-      "maxItems": 6,
+      "maxItems": 10,
       "items": {
         "type": "string",
         "minLength": 2,
