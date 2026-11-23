@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/adunext/mep/schema/status.schema.json",
+  "title": "MEP 1 heartbeat (status.json)",
+  "type": "object",
+  "required": ["mep", "alive", "state", "order"],
+  "properties": {
+    "mep": { "const": 1 },
+    "alive": { "type": "integer", "description": "最近一次心跳，Unix 毫秒" },
+    "state": { "enum": ["open", "stopped", "expired", "offline"] },
+    "order": { "type": ["string", "null"] },
+    "expiresAt": { "type": "integer" },
+    "revision": { "type": ["string", "null"] },
+    "working": { "type": "object", "required": ["id", "text", "at"], "properties": { "id": { "type": "string" }, "text": { "type": "string" }, "at": { "type": "integer" } } },
+    "refused": { "type": "object", "required": ["id", "code", "message", "at"], "properties": { "id": { "type": "string" }, "code": { "type": "string" }, "message": { "type": "string" }, "at": { "type": "integer" } } }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "mep": 1,
+  "key": "0123456789abcdef",
+  "who": "Claude",
+  "base": "9f3c2a7d1e0b4c58",
+  "look": {
+    "sheet": {
+      "from": 58,
+      "to": 68,
+      "count": 30
+    },
+    "captions": true
+  }
+}

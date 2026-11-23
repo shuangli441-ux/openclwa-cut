@@ -1,0 +1,12 @@
+{
+  "mep": 1,
+  "id": "r-02",
+  "ok": false,
+  "at": 1763520002345,
+  "revision": "4b7e0c91d2a35f68",
+  "error": {
+    "code": "conflict",
+    "retry": "reread",
+    "message": "工程已有新修改，本次未覆盖。请读取最新 project.json 后重新提交。"
+  }
+}

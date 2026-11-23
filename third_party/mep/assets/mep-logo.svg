@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">MEP</title>
+  <desc id="desc">Two paths exchange a request and a receipt around a shared workspace.</desc>
+  <defs>
+    <linearGradient id="surface" x1="0" y1="0" x2="1" y2="1" gradientTransform="scale(1.4)">
+      <stop stop-color="#151F34"/>
+      <stop offset="1" stop-color="#09111F"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="29" fill="url(#surface)"/>
+  <rect x="4.75" y="4.75" width="118.5" height="118.5" rx="28.25" fill="none" stroke="#34455F" stroke-width="1.5"/>
+  <g fill="none" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M30 76V51L45 38L59 50H89M80 41L89 50L80 59" stroke="#6CEACF"/>
+    <path d="M30 76V51L45 38L59 50H89M80 41L89 50L80 59" transform="rotate(180 64 64)" stroke="#A9A2FF"/>
+  </g>
+  <rect x="60.7" y="60.7" width="6.6" height="6.6" rx="1.45" transform="rotate(45 64 64)" fill="#F0F4FF"/>
+</svg>
