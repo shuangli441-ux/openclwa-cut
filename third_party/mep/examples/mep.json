@@ -1,0 +1,206 @@
+{
+  "protocol": "mep/1",
+  "name": "Motion Edit Protocol",
+  "app": {
+    "name": "Example Editor",
+    "version": "1.0.0"
+  },
+  "entry": "README.md",
+  "docs": {
+    "timeline": "docs/timeline.md",
+    "roughcut": "docs/roughcut.md",
+    "template": "docs/template.md",
+    "media": "docs/media.md",
+    "pages": "docs/pages.md",
+    "templateGuide": "TEMPLATE-GUIDE.md"
+  },
+  "state": {
+    "status": "status.json",
+    "project": "project.json",
+    "captions": "captions.json",
+    "content": "content.json",
+    "template": "template.json",
+    "media": "project-files/media.json"
+  },
+  "request": {
+    "file": "requests/<id>.json",
+    "id": "^[A-Za-z0-9_-]{1,100}$",
+    "maxBytes": 2097152,
+    "write": "先写 requests/<id>.tmp 再改名",
+    "fields": {
+      "mep": 1,
+      "key": "本单口令：用户复制给你的命令里的那一串，原样写",
+      "who": "你的名字，1–24 个字（字母、数字、汉字、空格 . _ -）",
+      "base": "project.json 的 revision；kinds 里 base 为 true 的请求必填",
+      "id": "可省略；写了要和文件名一致"
+    }
+  },
+  "result": {
+    "file": "results/<id>.json",
+    "kept": 200,
+    "fields": [
+      "mep",
+      "id",
+      "ok",
+      "at",
+      "revision",
+      "result",
+      "changes",
+      "spent",
+      "error"
+    ]
+  },
+  "kinds": {
+    "ops": {
+      "base": true,
+      "doc": "docs/timeline.md"
+    },
+    "roughcut": {
+      "base": true,
+      "doc": "docs/roughcut.md"
+    },
+    "template": {
+      "base": true,
+      "doc": "docs/template.md",
+      "paid": [
+        "compose"
+      ]
+    },
+    "look": {
+      "base": "times 和 sheet 必填；src（预览没上轨的素材）不用",
+      "doc": "docs/timeline.md"
+    },
+    "voice": {
+      "base": false,
+      "doc": "docs/media.md",
+      "paid": true
+    },
+    "search": {
+      "base": false,
+      "doc": "docs/media.md"
+    },
+    "fetch": {
+      "base": false,
+      "doc": "docs/media.md"
+    }
+  },
+  "ops": [
+    "cut",
+    "file",
+    "import",
+    "animation",
+    "content",
+    "page"
+  ],
+  "limits": {
+    "opsPerRequest": 100,
+    "fileTextBytes": 1048576,
+    "lookTimes": 12,
+    "lookWidth": [
+      160,
+      960
+    ],
+    "sheetSeconds": 600,
+    "sheetCount": [
+      2,
+      60
+    ],
+    "voiceChars": 20000,
+    "searchCount": 30,
+    "fetchItems": 20,
+    "importFiles": 3000,
+    "importBytes": 2147483648,
+    "inboxFileBytes": 4294967296
+  },
+  "paid": {
+    "note": "花费前宿主可以请用户在软件里确认；用户没确认时这一单不执行、不花费，回执写明原因。回执的 spent.credits 是这一单花的（null：宿主没拿到数字），spent.order 是这一单据的累计。",
+    "kinds": [
+      {
+        "kind": "voice",
+        "what": "配音，按字数"
+      },
+      {
+        "kind": "template",
+        "operation": "compose",
+        "what": "模板编排全片并出片"
+      }
+    ]
+  },
+  "errors": {
+    "bad_request": {
+      "retry": "fix",
+      "meaning": "请求格式或内容不对"
+    },
+    "unsupported_version": {
+      "retry": "fix",
+      "meaning": "请求没有写 \"mep\":1，或写了宿主不认识的版本"
+    },
+    "unauthorized": {
+      "retry": "user",
+      "meaning": "本单口令（key）不对：请用户在软件里重新点「复制命令」"
+    },
+    "order_closed": {
+      "retry": "user",
+      "meaning": "这一单已停止、已过期或还没开：请用户在软件里重新点「复制命令」"
+    },
+    "id_used": {
+      "retry": "fix",
+      "meaning": "这个 id 已经有回执，换一个新的 id"
+    },
+    "conflict": {
+      "retry": "reread",
+      "meaning": "base 不是工程现在的版本；模板请求时也可能是合同、材料或时间线变了"
+    },
+    "clip_unavailable": {
+      "retry": "reread",
+      "meaning": "片段不存在或已锁定"
+    },
+    "not_ready": {
+      "retry": "fix",
+      "meaning": "工程还不满足这一单的前提（例如没有口播或字幕）"
+    },
+    "needs_user": {
+      "retry": "user",
+      "meaning": "要用户在软件里确认、决定或操作"
+    },
+    "insufficient_credits": {
+      "retry": "user",
+      "meaning": "余额不足"
+    },
+    "busy": {
+      "retry": "later",
+      "meaning": "宿主正在重启，或画面引擎还没就绪"
+    },
+    "interrupted": {
+      "retry": "reread",
+      "meaning": "宿主处理到一半退出了，这一单可能已经执行：读 project.json 核对后再决定"
+    },
+    "failed": {
+      "retry": "no",
+      "meaning": "宿主内部出错"
+    }
+  },
+  "retry": {
+    "fix": "按 error.message 改请求，用新的 id 再交",
+    "reread": "重读 project.json（模板请求还要重读 template.json），用新的 revision 作 base、新的 id 再交",
+    "later": "稍后用新的 id 原样再交",
+    "user": "需要用户处理：把 error.message 转告用户",
+    "no": "不要重试；把 error.message 转告用户"
+  },
+  "heartbeat": {
+    "file": "status.json",
+    "field": "alive",
+    "everyMs": 5000,
+    "staleMs": 20000,
+    "states": [
+      "open",
+      "stopped",
+      "expired",
+      "offline"
+    ]
+  },
+  "order": {
+    "idleMs": 86400000,
+    "note": "一单据从用户点「复制命令」开始，到用户停下或空闲超过 idleMs 结束；每处理一单续期。结束后请用户重新复制命令（新口令）。"
+  }
+}

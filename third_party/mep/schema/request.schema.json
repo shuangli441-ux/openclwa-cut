@@ -1,0 +1,686 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/adunext/mep/schema/request.schema.json",
+  "title": "MEP 1 request (requests/<id>.json)",
+  "type": "object",
+  "required": [
+    "mep",
+    "key",
+    "who"
+  ],
+  "properties": {
+    "mep": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[\\w-]{1,100}$",
+      "description": "可省略；写了必须与文件名一致"
+    },
+    "key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "本单口令"
+    },
+    "who": {
+      "type": "string",
+      "pattern": "^[\\p{L}\\p{N}](?:[-_. \\p{L}\\p{N}]){0,23}$",
+      "description": "助手署名，首尾不留空格"
+    },
+    "base": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{16,64}$",
+      "description": "project.json 的 revision"
+    },
+    "ops": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/op"
+      }
+    },
+    "roughcut": {
+      "$ref": "#/$defs/roughcut"
+    },
+    "template": {
+      "$ref": "#/$defs/template"
+    },
+    "look": {
+      "$ref": "#/$defs/look"
+    },
+    "voice": {
+      "$ref": "#/$defs/voice"
+    },
+    "search": {
+      "$ref": "#/$defs/search"
+    },
+    "fetch": {
+      "$ref": "#/$defs/fetch"
+    }
+  },
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "required": [
+        "ops"
+      ],
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "roughcut"
+            ]
+          },
+          {
+            "required": [
+              "template"
+            ]
+          },
+          {
+            "required": [
+              "look"
+            ]
+          },
+          {
+            "required": [
+              "voice"
+            ]
+          },
+          {
+            "required": [
+              "search"
+            ]
+          },
+          {
+            "required": [
+              "fetch"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "required": [
+        "roughcut"
+      ],
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "ops"
+            ]
+          },
+          {
+            "required": [
+              "template"
+            ]
+          },
+          {
+            "required": [
+              "look"
+            ]
+          },
+          {
+            "required": [
+              "voice"
+            ]
+          },
+          {
+            "required": [
+              "search"
+            ]
+          },
+          {
+            "required": [
+              "fetch"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "required": [
+        "template"
+      ],
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "ops"
+            ]
+          },
+          {
+            "required": [
+              "roughcut"
+            ]
+          },
+          {
+            "required": [
+              "look"
+            ]
+          },
+          {
+            "required": [
+              "voice"
+            ]
+          },
+          {
+            "required": [
+              "search"
+            ]
+          },
+          {
+            "required": [
+              "fetch"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "required": [
+        "look"
+      ],
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "ops"
+            ]
+          },
+          {
+            "required": [
+              "roughcut"
+            ]
+          },
+          {
+            "required": [
+              "template"
+            ]
+          },
+          {
+            "required": [
+              "voice"
+            ]
+          },
+          {
+            "required": [
+              "search"
+            ]
+          },
+          {
+            "required": [
+              "fetch"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "required": [
+        "voice"
+      ],
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "ops"
+            ]
+          },
+          {
+            "required": [
+              "roughcut"
+            ]
+          },
+          {
+            "required": [
+              "template"
+            ]
+          },
+          {
+            "required": [
+              "look"
+            ]
+          },
+          {
+            "required": [
+              "search"
+            ]
+          },
+          {
+            "required": [
+              "fetch"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "required": [
+        "search"
+      ],
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "ops"
+            ]
+          },
+          {
+            "required": [
+              "roughcut"
+            ]
+          },
+          {
+            "required": [
+              "template"
+            ]
+          },
+          {
+            "required": [
+              "look"
+            ]
+          },
+          {
+            "required": [
+              "voice"
+            ]
+          },
+          {
+            "required": [
+              "fetch"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "required": [
+        "fetch"
+      ],
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "ops"
+            ]
+          },
+          {
+            "required": [
+              "roughcut"
+            ]
+          },
+          {
+            "required": [
+              "template"
+            ]
+          },
+          {
+            "required": [
+              "look"
+            ]
+          },
+          {
+            "required": [
+              "voice"
+            ]
+          },
+          {
+            "required": [
+              "search"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "allOf": [
+    {
+      "if": {
+        "anyOf": [
+          {
+            "required": [
+              "ops"
+            ]
+          },
+          {
+            "required": [
+              "roughcut"
+            ]
+          },
+          {
+            "required": [
+              "template"
+            ]
+          }
+        ]
+      },
+      "then": {
+        "required": [
+          "base"
+        ]
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "look"
+        ],
+        "properties": {
+          "look": {
+            "not": {
+              "required": [
+                "src"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "base"
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "op": {
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "properties": {
+        "op": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][\\w-]{0,63}$",
+          "description": "编辑项名称；宿主在 mep.json 的 ops 中列出，在 docs/timeline.md 中说明字段"
+        }
+      },
+      "description": "其余字段由宿主定义（SPEC §9.1）"
+    },
+    "roughcut": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "properties": {
+        "action": {
+          "enum": [
+            "read",
+            "preview",
+            "apply"
+          ]
+        },
+        "clipId": {
+          "type": "string"
+        },
+        "rev": {
+          "type": "string"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "decision": {
+          "type": "object",
+          "properties": {
+            "cuts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "line",
+                  "kind"
+                ],
+                "properties": {
+                  "line": {
+                    "type": "string",
+                    "pattern": "^L\\d+$"
+                  },
+                  "toLine": {
+                    "type": "string",
+                    "pattern": "^L\\d+$"
+                  },
+                  "quote": {
+                    "type": "string"
+                  },
+                  "occurrence": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "kind": {
+                    "enum": [
+                      "retake",
+                      "false_start",
+                      "misspeak",
+                      "stutter",
+                      "filler",
+                      "aside"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "pace": {
+              "const": "tight"
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "template": {
+      "type": "object",
+      "required": [
+        "operation"
+      ],
+      "properties": {
+        "operation": {
+          "enum": [
+            "compose",
+            "propose"
+          ]
+        },
+        "goal": {
+          "type": "string",
+          "maxLength": 4000
+        },
+        "until": {
+          "const": "plan"
+        }
+      }
+    },
+    "look": {
+      "type": "object",
+      "oneOf": [
+        {
+          "properties": {
+            "times": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 12,
+              "items": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 160,
+              "maximum": 960
+            },
+            "captions": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "times"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "properties": {
+            "sheet": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "to": {
+                  "type": "number"
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 2,
+                  "maximum": 60
+                }
+              },
+              "required": [
+                "from",
+                "to"
+              ],
+              "additionalProperties": false
+            },
+            "captions": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "sheet"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "properties": {
+            "src": {
+              "type": "string"
+            },
+            "at": {
+              "type": "number",
+              "minimum": 0
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 160,
+              "maximum": 960
+            }
+          },
+          "required": [
+            "src"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "voice": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "maxLength": 20000
+        },
+        "voice": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^(?!_)[\\w][\\w-]{0,59}$"
+        },
+        "list": {
+          "type": "boolean"
+        },
+        "language": {
+          "type": "string"
+        },
+        "q": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "search": {
+      "type": "object",
+      "required": [
+        "kind",
+        "q"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "image",
+            "video",
+            "music"
+          ]
+        },
+        "q": {
+          "type": "string",
+          "minLength": 1
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "orientation": {
+          "enum": [
+            "landscape",
+            "portrait",
+            "square"
+          ]
+        },
+        "provider": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "fetch": {
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "required": [
+              "ref"
+            ],
+            "properties": {
+              "ref": {
+                "type": "string",
+                "pattern": "^[\\w.:-]{1,200}$"
+              },
+              "name": {
+                "type": "string",
+                "pattern": "^(?!_)[\\w][\\w-]{0,59}$"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

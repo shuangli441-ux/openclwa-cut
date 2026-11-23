@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/adunext/mep/schema/result.schema.json",
+  "title": "MEP 1 result (results/<id>.json)",
+  "type": "object",
+  "required": [
+    "mep",
+    "id",
+    "ok",
+    "at"
+  ],
+  "properties": {
+    "mep": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[\\w-]{1,100}$"
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "at": {
+      "type": "integer",
+      "description": "Unix 毫秒"
+    },
+    "revision": {
+      "type": "string",
+      "description": "成功时为处理后的版本；失败时为当前版本"
+    },
+    "result": {
+      "description": "种类相关的结果"
+    },
+    "changes": {
+      "type": "object",
+      "required": [
+        "created",
+        "removed"
+      ],
+      "properties": {
+        "created": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "removed": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      }
+    },
+    "spent": {
+      "type": "object",
+      "properties": {
+        "credits": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "order": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "credits",
+        "order"
+      ]
+    },
+    "error": {
+      "type": "object",
+      "required": [
+        "code",
+        "retry",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "enum": [
+            "bad_request",
+            "unsupported_version",
+            "unauthorized",
+            "order_closed",
+            "id_used",
+            "conflict",
+            "clip_unavailable",
+            "not_ready",
+            "needs_user",
+            "insufficient_credits",
+            "busy",
+            "interrupted",
+            "failed"
+          ]
+        },
+        "retry": {
+          "enum": [
+            "fix",
+            "reread",
+            "later",
+            "user",
+            "no"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 1200
+        }
+      }
+    }
+  },
+  "if": {
+    "properties": {
+      "ok": {
+        "const": true
+      }
+    }
+  },
+  "then": {
+    "not": {
+      "required": [
+        "error"
+      ]
+    }
+  },
+  "else": {
+    "required": [
+      "error"
+    ]
+  }
+}

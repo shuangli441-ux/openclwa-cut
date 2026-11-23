@@ -1,0 +1,92 @@
+{
+  "manifest": {
+    "protocol": "mep/core/1",
+    "session": "demo-session",
+    "workspace": "demo-table",
+    "expiresAt": 1800000000000,
+    "stateSchema": "schemas/table-state.schema.json",
+    "actions": [
+      {
+        "id": "table.set_status",
+        "version": 1,
+        "effect": "write",
+        "paramsSchema": "schemas/table-set-status.schema.json",
+        "resultSchema": "schemas/table-set-status-result.schema.json"
+      }
+    ]
+  },
+  "state": {
+    "protocol": "mep/core/1",
+    "session": "demo-session",
+    "workspace": "demo-table",
+    "revision": "rev-3",
+    "data": {
+      "rows": [
+        {
+          "id": "row-17",
+          "status": "todo"
+        },
+        {
+          "id": "row-21",
+          "status": "todo"
+        }
+      ]
+    }
+  },
+  "request": {
+    "protocol": "mep/core/1",
+    "session": "demo-session",
+    "workspace": "demo-table",
+    "id": "r-01",
+    "credential": "fixture-key-not-for-production",
+    "action": "table.set_status",
+    "version": 1,
+    "baseRevision": "rev-3",
+    "params": {
+      "rowIds": [
+        "row-17",
+        "row-21"
+      ],
+      "status": "done"
+    }
+  },
+  "result": {
+    "protocol": "mep/core/1",
+    "session": "demo-session",
+    "workspace": "demo-table",
+    "id": "r-01",
+    "status": "succeeded",
+    "revision": "rev-4",
+    "output": {
+      "changed": [
+        "row-17",
+        "row-21"
+      ]
+    }
+  },
+  "conflict": {
+    "protocol": "mep/core/1",
+    "session": "demo-session",
+    "workspace": "demo-table",
+    "id": "r-02",
+    "status": "rejected",
+    "revision": "rev-4",
+    "error": {
+      "code": "conflict",
+      "next": "reread",
+      "message": "Read the new snapshot before editing."
+    }
+  },
+  "uncertain": {
+    "protocol": "mep/core/1",
+    "session": "demo-session",
+    "workspace": "demo-table",
+    "id": "r-03",
+    "status": "indeterminate",
+    "error": {
+      "code": "outcome_uncertain",
+      "next": "reconcile",
+      "message": "Check the original request before retrying."
+    }
+  }
+}

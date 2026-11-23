@@ -1,0 +1,297 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adudir.com/mep/core/1/schema/core.schema.json",
+  "title": "MEP Core 1 local binding",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/manifest"
+    },
+    {
+      "$ref": "#/$defs/state"
+    },
+    {
+      "$ref": "#/$defs/request"
+    },
+    {
+      "$ref": "#/$defs/result"
+    }
+  ],
+  "$defs": {
+    "manifest": {
+      "type": "object",
+      "properties": {
+        "protocol": {
+          "const": "mep/core/1"
+        },
+        "session": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,100}$"
+        },
+        "workspace": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,100}$"
+        },
+        "expiresAt": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]*(\\.[a-z][a-z0-9_-]*)+$"
+              },
+              "version": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "effect": {
+                "enum": [
+                  "read",
+                  "write"
+                ]
+              },
+              "paramsSchema": {
+                "type": "string",
+                "pattern": "^schemas/[A-Za-z0-9_-]+\\.schema\\.json$"
+              },
+              "resultSchema": {
+                "type": "string",
+                "pattern": "^schemas/[A-Za-z0-9_-]+\\.schema\\.json$"
+              }
+            },
+            "required": [
+              "id",
+              "version",
+              "effect",
+              "paramsSchema",
+              "resultSchema"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "stateSchema": {
+          "type": "string",
+          "pattern": "^schemas/[A-Za-z0-9_-]+\\.schema\\.json$"
+        }
+      },
+      "required": [
+        "protocol",
+        "session",
+        "workspace",
+        "expiresAt",
+        "actions",
+        "stateSchema"
+      ],
+      "additionalProperties": false
+    },
+    "state": {
+      "type": "object",
+      "properties": {
+        "protocol": {
+          "const": "mep/core/1"
+        },
+        "session": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,100}$"
+        },
+        "workspace": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,100}$"
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data": {}
+      },
+      "required": [
+        "protocol",
+        "session",
+        "workspace",
+        "revision",
+        "data"
+      ],
+      "additionalProperties": false
+    },
+    "request": {
+      "type": "object",
+      "properties": {
+        "protocol": {
+          "const": "mep/core/1"
+        },
+        "session": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,100}$"
+        },
+        "workspace": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,100}$"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,100}$"
+        },
+        "credential": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "action": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*(\\.[a-z][a-z0-9_-]*)+$"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "baseRevision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "params": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "protocol",
+        "session",
+        "workspace",
+        "id",
+        "credential",
+        "action",
+        "version",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    "error": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "next": {
+          "enum": [
+            "none",
+            "fix",
+            "reread",
+            "ask_user",
+            "reconcile"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1200
+        }
+      },
+      "required": [
+        "code",
+        "next",
+        "message"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "protocol": {
+          "const": "mep/core/1"
+        },
+        "session": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,100}$"
+        },
+        "workspace": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,100}$"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,100}$"
+        },
+        "status": {
+          "enum": [
+            "succeeded",
+            "rejected",
+            "failed",
+            "indeterminate"
+          ]
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "output": {},
+        "error": {
+          "$ref": "#/$defs/error"
+        }
+      },
+      "required": [
+        "protocol",
+        "session",
+        "workspace",
+        "id",
+        "status"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "succeeded"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "revision",
+              "output"
+            ],
+            "not": {
+              "required": [
+                "error"
+              ]
+            }
+          },
+          "else": {
+            "required": [
+              "error"
+            ],
+            "not": {
+              "required": [
+                "output"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "indeterminate"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "error": {
+                "properties": {
+                  "next": {
+                    "const": "reconcile"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

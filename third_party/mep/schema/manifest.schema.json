@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/adunext/mep/schema/manifest.schema.json",
+  "title": "MEP 1 manifest (mep.json)",
+  "type": "object",
+  "required": ["protocol", "entry", "docs", "state", "request", "result", "kinds", "ops", "limits", "paid", "errors", "retry", "heartbeat", "order"],
+  "properties": {
+    "protocol": { "const": "mep/1" },
+    "name": { "const": "Motion Edit Protocol" },
+    "app": { "type": "object", "properties": { "name": { "type": "string" }, "version": { "type": "string" } } },
+    "entry": { "type": "string" },
+    "docs": { "type": "object", "additionalProperties": { "type": "string" } },
+    "state": { "type": "object", "additionalProperties": { "type": "string" } },
+    "request": { "type": "object", "required": ["file", "id", "maxBytes", "fields"] },
+    "result": { "type": "object", "required": ["file", "kept", "fields"] },
+    "kinds": {
+      "type": "object",
+      "propertyNames": { "enum": ["ops", "roughcut", "template", "look", "voice", "search", "fetch"] },
+      "additionalProperties": { "type": "object", "required": ["base", "doc"], "properties": { "base": { "type": ["boolean", "string"] }, "doc": { "type": "string" }, "paid": { "type": ["boolean", "array"] } } }
+    },
+    "ops": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "limits": { "type": "object" },
+    "paid": { "type": "object", "properties": { "note": { "type": "string" }, "kinds": { "type": "array" } } },
+    "errors": { "type": "object", "additionalProperties": { "type": "object", "required": ["retry", "meaning"] } },
+    "retry": { "type": "object" },
+    "heartbeat": { "type": "object", "required": ["file", "field", "everyMs", "staleMs", "states"] },
+    "order": { "type": "object", "required": ["idleMs"] }
+  }
+}

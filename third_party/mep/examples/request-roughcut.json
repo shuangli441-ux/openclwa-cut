@@ -1,0 +1,26 @@
+{
+  "mep": 1,
+  "key": "0123456789abcdef",
+  "who": "Claude",
+  "base": "9f3c2a7d1e0b4c58",
+  "roughcut": {
+    "action": "preview",
+    "rev": "a1b2",
+    "decision": {
+      "cuts": [
+        {
+          "line": "L12",
+          "kind": "retake",
+          "reason": "同一句录了两遍，留后一遍"
+        },
+        {
+          "line": "L30",
+          "quote": "就是那个",
+          "kind": "filler",
+          "reason": "语气词"
+        }
+      ],
+      "pace": "tight"
+    }
+  }
+}

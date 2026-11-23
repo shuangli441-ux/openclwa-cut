@@ -1,0 +1,22 @@
+{
+  "mep": 1,
+  "key": "0123456789abcdef",
+  "who": "Codex",
+  "base": "9f3c2a7d1e0b4c58",
+  "ops": [
+    {
+      "op": "cut",
+      "clip": "v1",
+      "at": 12.4
+    },
+    {
+      "op": "file",
+      "path": "pages/title.html",
+      "text": "<!doctype html><html><body><h1>Title</h1></body></html>"
+    },
+    {
+      "op": "import",
+      "path": "inbox/bgm.mp3"
+    }
+  ]
+}
